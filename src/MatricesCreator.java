@@ -7,9 +7,9 @@ import java.io.FileReader;
 
 class MatricesCreator {
   static Matrix[] createMatrices(String fromFileName) {
-    String objString = "";
-    int   height1 = 0, width1 = 0, height2 = 0, width2 = 0;
-    int[] matrice1 = null, matrice2 = null;
+    String jsonString = "";
+    int[] heights = new int[2], widths = new int[2];
+    int[][] matrices = new int[][] { null, null };
 
     try (BufferedReader br = new BufferedReader(new FileReader(fromFileName))) {
       StringBuilder sb = new StringBuilder();
@@ -21,54 +21,55 @@ class MatricesCreator {
         line = br.readLine();
       }
 
-      objString = sb.toString();
+      jsonString = sb.toString();
     } catch (Exception e) {
       System.err.println("The 2 matrices should be stored in a JSON file, which name should be passed as an argument");
       System.exit(1);
     }
 
     try {
-      JSONObject jsonObj = new JSONObject(objString);
+      JSONObject jsonObj = new JSONObject(jsonString);
 
-      JSONObject  jsonObj1 = jsonObj.getJSONObject("1");
-      JSONObject  jsonObj2 = jsonObj.getJSONObject("2");
-      JSONArray matriceObj1 = jsonObj1.getJSONArray("matrice");
-      JSONArray matriceObj2 = jsonObj2.getJSONArray("matrice");
+      for (int i = 0; i < 2; ++i) {
+        JSONObject subObj = jsonObj.getJSONObject(Integer.toString(i + 1));
+        JSONArray matriceObj = subObj.getJSONArray("matrice");
 
-      height1 = jsonObj1.getInt("height");
-      width1 = jsonObj1.getInt("width");
-      matrice1 = new int[height1 * width1];
-      for (int i = 0; i < matriceObj1.length(); i++)
-      {
-        matrice1[i] = matriceObj1.getInt(i);
+        heights[i] = subObj.getInt("height");
+        widths[i] = subObj.getInt("width");
+        int size = heights[i] * widths[i];
+        matrices[i] = new int[size];
+
+        int j;
+        boolean outOfBound = false;
+        for (j = 0; j < matriceObj.length(); ++j) {
+          if (j == size) {
+            outOfBound = true;
+            break;
+          }
+          matrices[i][j] = matriceObj.getInt(j);
+        }
+
+        if (outOfBound || j != matrices[i].length) {
+          System.err.println("The \"height\" and \"width\" properties of the matrice " + (i + 1) + " don't match its real dimensions");
+          System.exit(1);
+        }
       }
 
-      height2 = jsonObj2.getInt("height");
-      width2 = jsonObj2.getInt("width");
-      matrice2 = new int[height2 * width2];
-      for (int i = 0; i < matriceObj2.length(); i++)
-      {
-        matrice2[i] = matriceObj2.getInt(i);
+      if (heights[0] != widths[1] || heights[1] != widths[0]) {
+        System.err.print("For the two matrices to be multipliable, ");
+        if (heights[0] == widths[0] || heights[1] == widths[1]) {
+          System.err.println("if one of the two matrices is a square matrix, then the other must be too");
+        } else {
+          System.err.println("one matrice's height must match the other matrice's width, and vice versa");
+        }
+        System.exit(1);
       }
     } catch (JSONException e) {
-      System.err.println("The JSON file should contain two objects respectively named \"1\" and \"2\", "
-        + "which each should have 3 properties: \"height\", \"width\" and \"matrice\" (the latter being an array representing the matrice) ");
+      System.err.println("The JSON file should contain two objects respectively named \"1\" and \"2\", which should each have "
+        + "3 properties: \"height\", \"width\" and \"matrice\" (the latter being an array representing the matrice)");
       System.exit(1);
     }
 
-    if (matrice1.length != height1 * width1) {
-      System.err.println("The \"height\" and \"width\" properties of the first matrice don't match its real dimensions");
-      System.exit(1);
-    }
-    if (matrice2.length != height2 * width2) {
-      System.err.println("The \"height\" and \"width\" properties of the second matrice don't match its real dimensions");
-      System.exit(1);
-    }
-
-    Matrix[] matrices = new Matrix[2];
-    matrices[0] = new Matrix(height1, width1, matrice1);
-    matrices[1] = new Matrix(height2, width2, matrice2);
-
-    return matrices;
+    return new Matrix[] { new Matrix(heights[0], widths[0], matrices[0]), new Matrix(heights[1], widths[1], matrices[1]) };
   }
 }
