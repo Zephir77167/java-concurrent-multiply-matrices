@@ -6,10 +6,48 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 
 class MatricesCreator {
+  static class MatrixFromJSONCreator implements Runnable {
+    JSONObject _subObj;
+    Matrix _result;
+
+    MatrixFromJSONCreator(JSONObject subObj) {
+      _subObj = subObj;
+    }
+
+    Matrix getResult() {
+      return _result;
+    }
+
+    public void run () {
+      JSONArray matrixObj = _subObj.getJSONArray("matrice");
+
+      int height = _subObj.getInt("height");
+      int width = _subObj.getInt("width");
+      int size = height * width;
+      int[] array = new int[size];
+
+      int i;
+      boolean outOfBound = false;
+      for (i = 0; i < matrixObj.length(); ++i) {
+        if (i == size) {
+          outOfBound = true;
+          break;
+        }
+        array[i] = matrixObj.getInt(i);
+      }
+
+      if (outOfBound || i != array.length) {
+        System.err.println("The \"height\" and \"width\" properties of the matrice " + (i + 1) + " don't match its real dimensions");
+        System.exit(1);
+      }
+
+      _result = new Matrix(height, width, array);
+    }
+  }
+
   static Matrix[] createMatrices(String fromFileName) {
     String jsonString = "";
-    int[] heights = new int[2], widths = new int[2];
-    int[][] matrices = new int[][] { null, null };
+    Matrix[] matrices = new Matrix[2];
 
     try (BufferedReader br = new BufferedReader(new FileReader(fromFileName))) {
       StringBuilder sb = new StringBuilder();
@@ -29,35 +67,31 @@ class MatricesCreator {
 
     try {
       JSONObject jsonObj = new JSONObject(jsonString);
+      MatrixFromJSONCreator[] matrixCreators = new MatrixFromJSONCreator[2];
+      Thread[] threads = new Thread[2];
 
       for (int i = 0; i < 2; ++i) {
         JSONObject subObj = jsonObj.getJSONObject(Integer.toString(i + 1));
-        JSONArray matriceObj = subObj.getJSONArray("matrice");
 
-        heights[i] = subObj.getInt("height");
-        widths[i] = subObj.getInt("width");
-        int size = heights[i] * widths[i];
-        matrices[i] = new int[size];
-
-        int j;
-        boolean outOfBound = false;
-        for (j = 0; j < matriceObj.length(); ++j) {
-          if (j == size) {
-            outOfBound = true;
-            break;
-          }
-          matrices[i][j] = matriceObj.getInt(j);
-        }
-
-        if (outOfBound || j != matrices[i].length) {
-          System.err.println("The \"height\" and \"width\" properties of the matrice " + (i + 1) + " don't match its real dimensions");
-          System.exit(1);
-        }
+        matrixCreators[i] = new MatrixFromJSONCreator(subObj);
+        threads[i] = new Thread(matrixCreators[i]);
+        threads[i].start();
       }
 
-      if (heights[0] != widths[1] || heights[1] != widths[0]) {
+      try {
+        threads[0].join();
+        threads[1].join();
+      } catch (InterruptedException e) {
+        System.err.println("Thread supposed to parse matrice has been unexpectedly interrupted");
+        System.exit(1);
+      }
+
+      matrices[0] = matrixCreators[0].getResult();
+      matrices[1] = matrixCreators[1].getResult();
+
+      if (matrices[0].getHeight() != matrices[1].getWidth() || matrices[1].getHeight() != matrices[0].getWidth()) {
         System.err.print("For the two matrices to be multipliable, ");
-        if (heights[0] == widths[0] || heights[1] == widths[1]) {
+        if (matrices[0].getHeight() == matrices[0].getWidth() || matrices[1].getHeight() == matrices[1].getWidth()) {
           System.err.println("if one of the two matrices is a square matrix, then the other must be too");
         } else {
           System.err.println("one matrice's height must match the other matrice's width, and vice versa");
@@ -70,6 +104,6 @@ class MatricesCreator {
       System.exit(1);
     }
 
-    return new Matrix[] { new Matrix(heights[0], widths[0], matrices[0]), new Matrix(heights[1], widths[1], matrices[1]) };
+    return matrices;
   }
 }
