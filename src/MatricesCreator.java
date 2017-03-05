@@ -1,17 +1,23 @@
-import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.JSONException;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.util.Random;
 
 class MatricesCreator {
-  static class MatrixFromJSONCreator implements Runnable {
-    JSONObject _subObj;
+  static int MATRICES_VALUES_BOUND = 10;
+
+  static class MatrixFromJSONGenerator implements Runnable {
+    int _height;
+    int _width;
+    long _seed;
     Matrix _result;
 
-    MatrixFromJSONCreator(JSONObject subObj) {
-      _subObj = subObj;
+    MatrixFromJSONGenerator(int height, int width, long seed) {
+      _height = height;
+      _width = width;
+      _seed = seed;
     }
 
     Matrix getResult() {
@@ -19,29 +25,15 @@ class MatricesCreator {
     }
 
     public void run () {
-      JSONArray matrixObj = _subObj.getJSONArray("matrice");
-
-      int height = _subObj.getInt("height");
-      int width = _subObj.getInt("width");
-      int size = height * width;
+      int size = _height * _width;
       long[] array = new long[size];
+      Random random = new Random(_seed);
 
-      int i;
-      boolean outOfBound = false;
-      for (i = 0; i < matrixObj.length(); ++i) {
-        if (i == size) {
-          outOfBound = true;
-          break;
-        }
-        array[i] = matrixObj.getInt(i);
+      for (int i = 0; i < size; ++i) {
+        array[i] = random.nextInt(MATRICES_VALUES_BOUND * 2) - MATRICES_VALUES_BOUND;
       }
 
-      if (outOfBound || i != array.length) {
-        System.err.println("The \"height\" and \"width\" properties of the matrice " + (i + 1) + " don't match its real dimensions");
-        System.exit(1);
-      }
-
-      _result = new Matrix(height, width, array);
+      _result = new Matrix(_height, _width, array);
     }
   }
 
@@ -61,24 +53,31 @@ class MatricesCreator {
 
       jsonString = sb.toString();
     } catch (Exception e) {
-      System.err.println("The 2 matrices should be stored in a JSON file, which name should be passed as an argument");
+      System.err.println("The 2 matrices should be stored in a JSON file, which path should be passed as an argument");
       System.exit(1);
     }
 
     try {
       JSONObject jsonObj = new JSONObject(jsonString);
-      MatrixFromJSONCreator[] matrixCreators = new MatrixFromJSONCreator[2];
+      MatrixFromJSONGenerator[] matrixCreators = new MatrixFromJSONGenerator[2];
       Thread[] threads = new Thread[2];
 
-      for (int i = 0; i < 2; ++i) {
-        JSONObject subObj = jsonObj.getJSONObject(Integer.toString(i + 1));
+      int height = jsonObj.getInt("height");
+      int width = jsonObj.getInt("width");
+      long seed = jsonObj.getInt("seed");
 
-        matrixCreators[i] = new MatrixFromJSONCreator(subObj);
-        threads[i] = new Thread(matrixCreators[i]);
-        threads[i].start();
+      if (height < 1 || width < 1) {
+        System.err.print("The \"height\" and \"width\" properties of the JSON files must have a value of at least 1");
+        System.exit(1);
       }
 
       try {
+        matrixCreators[0] = new MatrixFromJSONGenerator(height, width, seed);
+        matrixCreators[1] = new MatrixFromJSONGenerator(width, height, seed);
+        threads[0] = new Thread(matrixCreators[0]);
+        threads[1] = new Thread(matrixCreators[1]);
+        threads[0].start();
+        threads[1].start();
         threads[0].join();
         threads[1].join();
       } catch (InterruptedException e) {
@@ -88,19 +87,9 @@ class MatricesCreator {
 
       matrices[0] = matrixCreators[0].getResult();
       matrices[1] = matrixCreators[1].getResult();
-
-      if (matrices[0].getHeight() != matrices[1].getWidth() || matrices[1].getHeight() != matrices[0].getWidth()) {
-        System.err.print("For the two matrices to be multipliable, ");
-        if (matrices[0].getHeight() == matrices[0].getWidth() || matrices[1].getHeight() == matrices[1].getWidth()) {
-          System.err.println("if one of the two matrices is a square matrix, then the other must be too");
-        } else {
-          System.err.println("one matrice's height must match the other matrice's width, and vice versa");
-        }
-        System.exit(1);
-      }
     } catch (JSONException e) {
-      System.err.println("The JSON file should contain two objects respectively named \"1\" and \"2\", which should each have "
-        + "3 properties: \"height\", \"width\" and \"matrice\" (the latter being an array representing the matrice)");
+      System.err.println("The JSON file should contain 3 properties: \"height\", \"width\" and \"seed\""
+        + " (the latter being the seed from which the random numbers are generated to fill the matrices)");
       System.exit(1);
     }
 

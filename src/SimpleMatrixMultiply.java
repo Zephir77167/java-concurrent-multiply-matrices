@@ -1,11 +1,7 @@
-public class SimpleMatrixMultiply implements Runnable {
-  public void run() {
-    System.out.println("Hello again!");
-  }
-
+public class SimpleMatrixMultiply {
   public static void main(String args[]) {
     if (args.length != 1) {
-      System.err.println("This program accepts one argument: a path to the JSON file containing the 2 matrices");
+      System.err.println("This program accepts one argument: a path to the JSON file containing the 2 matrices parameters");
       System.exit(1);
     }
 
@@ -15,18 +11,18 @@ public class SimpleMatrixMultiply implements Runnable {
     Matrix[] matrices = MatricesCreator.createMatrices(args[0]);
     timer1.end();
 
-    matrices[0].print();
-    matrices[1].print();
+    matrices[0].parsablePrint();
+    matrices[1].parsablePrint();
 
     timer2.start();
     Matrix result1 = matrices[0].multiplyBy(matrices[1]);
     timer2.end();
-    result1.print();
+    result1.prettyPrint();
 
     timer3.start();
     Matrix result2 = matrices[1].multiplyBy(matrices[0]);
     timer3.end();
-    result2.print();
+    result2.prettyPrint();
 
     System.out.println("Time spent parsing matrices: " + timer1.getEllapsedTime());
     System.out.println("Time spent doing m1 * m2: " + timer2.getEllapsedTime());

@@ -9,45 +9,16 @@ class Matrix {
     _array = array;
   }
 
-  int getHeight() {
+  private int getHeight() {
     return _height;
   }
 
-  int getWidth() {
+  private int getWidth() {
     return _width;
   }
 
-  long[] getArray() {
+  private long[] getArray() {
     return _array;
-  }
-
-  void print() {
-    for (int i = 0; i < _array.length; i++)
-    {
-      if (i != 0) {
-        if (i % _width == 0) {
-          System.out.println();
-        } else {
-          long value = _array[i];
-          int nbDecimals = 0;
-
-          while (value >= 10) {
-            nbDecimals += 1;
-            value /= 10;
-          }
-
-          String formattingSpaces = "";
-          for (int j = nbDecimals; j < 5; ++j) {
-            formattingSpaces += " ";
-          }
-
-          System.out.print(formattingSpaces);
-        }
-      }
-      System.out.print(_array[i]);
-    }
-    System.out.println();
-    System.out.println();
   }
 
   private long multiplyLineByColumn(Matrix m2, int line, int column) {
@@ -75,5 +46,52 @@ class Matrix {
     }
 
     return new Matrix(resultSideSize, resultSideSize, resultArray);
+  }
+
+  void prettyPrint() {
+    for (int i = 0; i < _array.length; i++) {
+      if (i != 0 && i % _width == 0) {
+        System.out.println();
+      }
+
+      long value = _array[i];
+      int nbDecimals = 0;
+
+      while (value >= 10 || value <= -10) {
+        nbDecimals += 1;
+        value /= 10;
+      }
+
+      String formattingSpaces = "";
+      for (int j = nbDecimals; j < 5; ++j) {
+        formattingSpaces += " ";
+      }
+      if (value >= 0) {
+        formattingSpaces += " ";
+      }
+
+      System.out.print(formattingSpaces);
+      System.out.print(_array[i]);
+    }
+
+    System.out.println();
+    System.out.println();
+  }
+
+  void parsablePrint() {
+    for (int i = 0; i < _array.length; i++) {
+      if (i != 0) {
+        if (i % _width == 0) {
+          System.out.println();
+        } else {
+          System.out.print(", ");
+        }
+      }
+
+      System.out.print(_array[i]);
+    }
+
+    System.out.println();
+    System.out.println();
   }
 }
