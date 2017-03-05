@@ -28,27 +28,35 @@ class Matrix {
         if (i % _width == 0) {
           System.out.println();
         } else {
-          if (_array[i] >= 100) {
-            System.out.print("  ");
-          } else if (_array[i] >= 10) {
-            System.out.print("   ");
-          } else {
-            System.out.print("    ");
+          int value = _array[i];
+          int nbDecimals = 0;
+
+          while (value >= 10) {
+            nbDecimals += 1;
+            value /= 10;
           }
+
+          String formattingSpaces = "";
+          for (int j = nbDecimals; j < 5; ++j) {
+            formattingSpaces += " ";
+          }
+
+          System.out.print(formattingSpaces);
         }
       }
       System.out.print(_array[i]);
     }
     System.out.println();
+    System.out.println();
   }
 
-  private int multiplyLineByColumn(Matrix m2, int line, int column, int resultHeight, int resultWidth) {
+  private int multiplyLineByColumn(Matrix m2, int line, int column) {
     Matrix m1 = this;
 
     int result = 0;
 
-    for (int i = 0; i < resultHeight; ++i) {
-      result += m1.getArray()[line * resultWidth + i] * m2.getArray()[i * resultWidth + column];
+    for (int i = 0; i < m1.getWidth(); ++i) {
+      result += m1.getArray()[line * m1.getWidth() + i] * m2.getArray()[i * m2.getWidth() + column];
     }
 
     return result;
@@ -57,16 +65,15 @@ class Matrix {
   Matrix multiplyBy(Matrix m2) {
     Matrix m1 = this;
 
-    int resultHeight = m1.getHeight() > m2.getHeight() ? m1.getHeight() : m2.getHeight();
-    int resultWidth = m1.getWidth() > m2.getWidth() ? m1.getWidth() : m2.getWidth();
-    int[] resultArray = new int[resultHeight * resultWidth];
+    int resultSideSize = m1.getHeight();
+    int[] resultArray = new int[resultSideSize * resultSideSize];
 
-    for (int i = 0; i < resultHeight; ++i) {
-      for (int j = 0; j < resultWidth; ++j) {
-        resultArray[i * resultWidth + j] = multiplyLineByColumn(m2, i, j, resultHeight, resultWidth);
+    for (int i = 0; i < resultSideSize; ++i) {
+      for (int j = 0; j < resultSideSize; ++j) {
+        resultArray[i * resultSideSize + j] = multiplyLineByColumn(m2, i, j);
       }
     }
 
-    return new Matrix(resultHeight, resultWidth, resultArray);
+    return new Matrix(resultSideSize, resultSideSize, resultArray);
   }
 }
