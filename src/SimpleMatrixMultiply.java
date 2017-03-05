@@ -14,5 +14,12 @@ public class SimpleMatrixMultiply implements Runnable {
     matrices[0].print();
     System.out.println();
     matrices[1].print();
+    System.out.println();
+
+    Matrix result1 = matrices[0].multiplyBy(matrices[1]);
+    result1.print();
+    System.out.println();
+    Matrix result2 = matrices[1].multiplyBy(matrices[0]);
+    result2.print();
   }
 }

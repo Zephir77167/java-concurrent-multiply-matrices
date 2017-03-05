@@ -28,15 +28,45 @@ class Matrix {
         if (i % _width == 0) {
           System.out.println();
         } else {
-          if (_array[i] >= 10) {
+          if (_array[i] >= 100) {
             System.out.print("  ");
-          } else {
+          } else if (_array[i] >= 10) {
             System.out.print("   ");
+          } else {
+            System.out.print("    ");
           }
         }
       }
       System.out.print(_array[i]);
     }
     System.out.println();
+  }
+
+  private int multiplyLineByColumn(Matrix m2, int line, int column, int resultHeight, int resultWidth) {
+    Matrix m1 = this;
+
+    int result = 0;
+
+    for (int i = 0; i < resultHeight; ++i) {
+      result += m1.getArray()[line * resultWidth + i] * m2.getArray()[i * resultWidth + column];
+    }
+
+    return result;
+  }
+
+  Matrix multiplyBy(Matrix m2) {
+    Matrix m1 = this;
+
+    int resultHeight = m1.getHeight() > m2.getHeight() ? m1.getHeight() : m2.getHeight();
+    int resultWidth = m1.getWidth() > m2.getWidth() ? m1.getWidth() : m2.getWidth();
+    int[] resultArray = new int[resultHeight * resultWidth];
+
+    for (int i = 0; i < resultHeight; ++i) {
+      for (int j = 0; j < resultWidth; ++j) {
+        resultArray[i * resultWidth + j] = multiplyLineByColumn(m2, i, j, resultHeight, resultWidth);
+      }
+    }
+
+    return new Matrix(resultHeight, resultWidth, resultArray);
   }
 }
