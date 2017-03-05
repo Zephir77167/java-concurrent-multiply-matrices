@@ -1,9 +1,9 @@
 class Matrix {
   private int _height;
   private int _width;
-  private int[] _array;
+  private long[] _array;
 
-  Matrix(int height, int width, int[] array) {
+  Matrix(int height, int width, long[] array) {
     _height = height;
     _width = width;
     _array = array;
@@ -17,7 +17,7 @@ class Matrix {
     return _width;
   }
 
-  int[] getArray() {
+  long[] getArray() {
     return _array;
   }
 
@@ -28,7 +28,7 @@ class Matrix {
         if (i % _width == 0) {
           System.out.println();
         } else {
-          int value = _array[i];
+          long value = _array[i];
           int nbDecimals = 0;
 
           while (value >= 10) {
@@ -50,10 +50,10 @@ class Matrix {
     System.out.println();
   }
 
-  private int multiplyLineByColumn(Matrix m2, int line, int column) {
+  private long multiplyLineByColumn(Matrix m2, int line, int column) {
     Matrix m1 = this;
 
-    int result = 0;
+    long result = 0;
 
     for (int i = 0; i < m1.getWidth(); ++i) {
       result += m1.getArray()[line * m1.getWidth() + i] * m2.getArray()[i * m2.getWidth() + column];
@@ -66,7 +66,7 @@ class Matrix {
     Matrix m1 = this;
 
     int resultSideSize = m1.getHeight();
-    int[] resultArray = new int[resultSideSize * resultSideSize];
+    long[] resultArray = new long[resultSideSize * resultSideSize];
 
     for (int i = 0; i < resultSideSize; ++i) {
       for (int j = 0; j < resultSideSize; ++j) {

@@ -24,7 +24,7 @@ class MatricesCreator {
       int height = _subObj.getInt("height");
       int width = _subObj.getInt("width");
       int size = height * width;
-      int[] array = new int[size];
+      long[] array = new long[size];
 
       int i;
       boolean outOfBound = false;
