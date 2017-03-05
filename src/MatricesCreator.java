@@ -6,7 +6,7 @@ import java.io.FileReader;
 import java.util.Random;
 
 class MatricesCreator {
-  static int MATRICES_VALUES_BOUND = 10;
+  static int MATRICES_VALUES_BOUND = 100;
 
   static class MatrixFromJSONGenerator implements Runnable {
     int _height;

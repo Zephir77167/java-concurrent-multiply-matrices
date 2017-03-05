@@ -1,31 +1,45 @@
 public class SimpleMatrixMultiply {
   public static void main(String args[]) {
-    if (args.length != 1) {
-      System.err.println("This program accepts one argument: a path to the JSON file containing the 2 matrices parameters");
+    if (args.length < 1 || (args.length == 1 && !args[0].contains("json"))) {
+      System.err.println("Usage: java -cp \"out;libs/*\" SimpleMatrixMultiply <path-to.json> [-v]");
       System.exit(1);
     }
 
     Timer timer1 = new Timer(), timer2 = new Timer(), timer3 = new Timer();
+    boolean verbose = false;
+    String filePath = args[0];
+
+    if (args.length > 1 && (args[0].equals("-v") || args[0].equals("--verbose")
+        || args[1].equals("-v") || args[1].equals("--verbose"))) {
+      verbose = true;
+    }
+    if (args.length > 1 && (args[0].equals("-v") || args[0].equals("--verbose"))) {
+      filePath = args[1];
+    }
 
     timer1.start();
-    Matrix[] matrices = MatricesCreator.createMatrices(args[0]);
+    Matrix[] matrices = MatricesCreator.createMatrices(filePath);
     timer1.end();
-
-    matrices[0].parsablePrint();
-    matrices[1].parsablePrint();
+    System.out.println("Time spent generating matrices: " + timer1.getEllapsedTime());
+    if (verbose) {
+      matrices[0].parsablePrint();
+      matrices[1].parsablePrint();
+    }
 
     timer2.start();
     Matrix result1 = matrices[0].multiplyBy(matrices[1]);
     timer2.end();
-    result1.prettyPrint();
+    System.out.println("Time spent doing m1 * m2: " + timer2.getEllapsedTime());
+    if (verbose) {
+      result1.prettyPrint();
+    }
 
     timer3.start();
     Matrix result2 = matrices[1].multiplyBy(matrices[0]);
     timer3.end();
-    result2.prettyPrint();
-
-    System.out.println("Time spent parsing matrices: " + timer1.getEllapsedTime());
-    System.out.println("Time spent doing m1 * m2: " + timer2.getEllapsedTime());
     System.out.println("Time spent doing m2 * m1: " + timer3.getEllapsedTime());
+    if (verbose) {
+      result2.prettyPrint();
+    }
   }
 }
