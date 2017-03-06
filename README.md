@@ -2,6 +2,17 @@
 
 - Java JDK 1.8
 
+<h2>Description</h2>
+
+This program computes the product of 2 matrices, using two different algorithms (SimpleMatrixMultiply and AdvancedMatrixMultiply).
+
+It takes the path to a JSON file containing 3 properties:
+ - `height` (height of the first matrix),
+ - `width` (width of the first matrix),
+ - `seed` (seed used to generate random numbers) .
+ 
+ Then generates two matrices, fills them with random number using the provided `seed`, with bounds [-1000000;1000000], and finally computes the product of the two matrices.
+
 <h2>Usage:</h2>
 
 - Windows
@@ -27,14 +38,8 @@ List of files to test on (in resources/):
 
 Running the program with `-v` displays the 2 generated matrices and the 2 results `m1 * m2` and `m2 * m1`
 
-Results can be checked on (easier using 10-20.json): http://wims.unice.fr/wims/wims.cgi?session=3ICB518C69.3&+lang=en&+module=tool%2Flinear%2Fmatmult
+Results can be checked on (easier using matrices-10-20.json): http://wims.unice.fr/wims/wims.cgi?session=3ICB518C69.3&+lang=en&+module=tool%2Flinear%2Fmatmult
 
 <h2>License</h2>
 
-Copyright 2017 Adrien HARNAY
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+This software is under the [MIT License](https://opensource.org/licenses/MIT) (Copyright 2017, Adrien HARNAY).
