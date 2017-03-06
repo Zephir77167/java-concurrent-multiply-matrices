@@ -18,7 +18,7 @@ public class SimpleMatrixMultiply {
     }
 
     timer1.start();
-    Matrix[] matrices = MatricesCreator.createMatrices(filePath);
+    AMatrix[] matrices = MatricesCreator.createMatrices(filePath, true);
     timer1.end();
     System.out.println("Time spent generating matrices: " + timer1.getEllapsedTime());
     if (verbose) {
@@ -27,7 +27,7 @@ public class SimpleMatrixMultiply {
     }
 
     timer2.start();
-    Matrix result1 = matrices[0].multiplyBy(matrices[1]);
+    AMatrix result1 = matrices[0].multiplyBy(matrices[1]);
     timer2.end();
     System.out.println("Time spent doing m1 * m2: " + timer2.getEllapsedTime());
     if (verbose) {
@@ -35,7 +35,7 @@ public class SimpleMatrixMultiply {
     }
 
     timer3.start();
-    Matrix result2 = matrices[1].multiplyBy(matrices[0]);
+    AMatrix result2 = matrices[1].multiplyBy(matrices[0]);
     timer3.end();
     System.out.println("Time spent doing m2 * m1: " + timer3.getEllapsedTime());
     if (verbose) {

@@ -1,51 +1,24 @@
-class Matrix {
+abstract class AMatrix {
   private int _height;
   private int _width;
   private long[] _array;
 
-  Matrix(int height, int width, long[] array) {
+  AMatrix(int height, int width, long[] array) {
     _height = height;
     _width = width;
     _array = array;
   }
 
-  private int getHeight() {
+  int getHeight() {
     return _height;
   }
 
-  private int getWidth() {
+  int getWidth() {
     return _width;
   }
 
-  private long[] getArray() {
+  long[] getArray() {
     return _array;
-  }
-
-  private long multiplyLineByColumn(Matrix m2, int line, int column) {
-    Matrix m1 = this;
-
-    long result = 0;
-
-    for (int i = 0; i < m1.getWidth(); ++i) {
-      result += m1.getArray()[line * m1.getWidth() + i] * m2.getArray()[i * m2.getWidth() + column];
-    }
-
-    return result;
-  }
-
-  Matrix multiplyBy(Matrix m2) {
-    Matrix m1 = this;
-
-    int resultSideSize = m1.getHeight();
-    long[] resultArray = new long[resultSideSize * resultSideSize];
-
-    for (int i = 0; i < resultSideSize; ++i) {
-      for (int j = 0; j < resultSideSize; ++j) {
-        resultArray[i * resultSideSize + j] = multiplyLineByColumn(m2, i, j);
-      }
-    }
-
-    return new Matrix(resultSideSize, resultSideSize, resultArray);
   }
 
   void prettyPrint() {
@@ -94,4 +67,6 @@ class Matrix {
     System.out.println();
     System.out.println();
   }
+
+  abstract AMatrix multiplyBy(AMatrix m2);
 }

@@ -12,15 +12,17 @@ class MatricesCreator {
     int _height;
     int _width;
     long _seed;
-    Matrix _result;
+    boolean _isSimpleMatrix;
+    AMatrix _result;
 
-    MatrixFromJSONGenerator(int height, int width, long seed) {
+    MatrixFromJSONGenerator(int height, int width, long seed, boolean isSimpleMatrix) {
       _height = height;
       _width = width;
       _seed = seed;
+      _isSimpleMatrix = isSimpleMatrix;
     }
 
-    Matrix getResult() {
+    AMatrix getResult() {
       return _result;
     }
 
@@ -33,13 +35,17 @@ class MatricesCreator {
         array[i] = random.nextInt(MATRICES_VALUES_BOUND * 2) - MATRICES_VALUES_BOUND;
       }
 
-      _result = new Matrix(_height, _width, array);
+      if (_isSimpleMatrix) {
+        _result = new SimpleMatrix(_height, _width, array);
+      } else {
+        _result = null;
+      }
     }
   }
 
-  static Matrix[] createMatrices(String fromFileName) {
+  static AMatrix[] createMatrices(String fromFileName, boolean isSimpleMatrix) {
     String jsonString = "";
-    Matrix[] matrices = new Matrix[2];
+    AMatrix[] matrices = new AMatrix[2];
 
     try (BufferedReader br = new BufferedReader(new FileReader(fromFileName))) {
       StringBuilder sb = new StringBuilder();
@@ -72,8 +78,8 @@ class MatricesCreator {
       }
 
       try {
-        matrixCreators[0] = new MatrixFromJSONGenerator(height, width, seed);
-        matrixCreators[1] = new MatrixFromJSONGenerator(width, height, seed);
+        matrixCreators[0] = new MatrixFromJSONGenerator(height, width, seed, isSimpleMatrix);
+        matrixCreators[1] = new MatrixFromJSONGenerator(width, height, seed, isSimpleMatrix);
         threads[0] = new Thread(matrixCreators[0]);
         threads[1] = new Thread(matrixCreators[1]);
         threads[0].start();
