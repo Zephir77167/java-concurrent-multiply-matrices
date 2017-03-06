@@ -1,0 +1,6 @@
+# Ignore everything in this directory
+*
+# Except this file
+!.gitignore
+
+# So that javac -d "out" works without the user having to execute `mkdir out`
