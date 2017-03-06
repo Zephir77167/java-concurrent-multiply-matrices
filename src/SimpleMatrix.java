@@ -7,14 +7,14 @@ class SimpleMatrix extends AMatrix {
     AMatrix _m1;
     AMatrix _m2;
     long[] _resultArray;
-    int _resultSideSize;
+    int _resultWidth;
     int _line;
 
-    LineCalculator(AMatrix m1, AMatrix m2, long[] resultArray, int resultSideSize, int line) {
+    LineCalculator(AMatrix m1, AMatrix m2, long[] resultArray, int resultWidth, int line) {
       _m1 = m1;
       _m2 = m2;
       _resultArray = resultArray;
-      _resultSideSize = resultSideSize;
+      _resultWidth = resultWidth;
       _line = line;
     }
 
@@ -29,8 +29,8 @@ class SimpleMatrix extends AMatrix {
     }
 
     public void run () {
-      for (int i = 0; i < _resultSideSize; ++i) {
-        _resultArray[_line * _resultSideSize + i] = multiplyLineByColumn(i);
+      for (int i = 0; i < _resultWidth; ++i) {
+        _resultArray[_line * _resultWidth + i] = multiplyLineByColumn(i);
       }
     }
   }
@@ -38,23 +38,24 @@ class SimpleMatrix extends AMatrix {
   AMatrix multiplyBy(AMatrix m2) {
     AMatrix m1 = this;
 
-    int resultSideSize = m1.getHeight();
-    long[] resultArray = new long[resultSideSize * resultSideSize];
-    Thread[] threads = new Thread[resultSideSize];
+    int resultHeight = m1.getHeight();
+    int resultWidth = m2.getWidth();
+    long[] resultArray = new long[resultHeight * resultWidth];
+    Thread[] threads = new Thread[resultHeight];
 
-    for (int i = 0; i < resultSideSize; ++i) {
-      threads[i] = new Thread(new LineCalculator(m1, m2, resultArray, resultSideSize, i));
+    for (int i = 0; i < resultHeight; ++i) {
+      threads[i] = new Thread(new LineCalculator(m1, m2, resultArray, resultWidth, i));
       threads[i].start();
     }
 
     try {
-      for (int i = 0; i < resultSideSize; ++i) {
+      for (int i = 0; i < resultHeight; ++i) {
         threads[i].join();
       }
     } catch (InterruptedException e) {
       System.err.println("Thread supposed to compute line has been unexpectedly interrupted");
     }
 
-    return new SimpleMatrix(resultSideSize, resultSideSize, resultArray);
+    return new SimpleMatrix(resultHeight, resultWidth, resultArray);
   }
 }

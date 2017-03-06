@@ -6,7 +6,7 @@ import java.io.FileReader;
 import java.util.Random;
 
 class MatricesCreator {
-  static int MATRICES_VALUES_BOUND = 1000000;
+  static int MATRICES_VALUES_BOUND = 10;
 
   static class MatrixFromJSONGenerator implements Runnable {
     int _height;
@@ -68,18 +68,25 @@ class MatricesCreator {
       MatrixFromJSONGenerator[] matrixCreators = new MatrixFromJSONGenerator[2];
       Thread[] threads = new Thread[2];
 
-      int height = jsonObj.getInt("height");
-      int width = jsonObj.getInt("width");
+      int height1 = jsonObj.getInt("height1");
+      int width1 = jsonObj.getInt("width1");
+      int height2 = jsonObj.getInt("height2");
+      int width2 = jsonObj.getInt("width2");
       long seed = jsonObj.getInt("seed");
 
-      if (height < 1 || width < 1) {
+      if (height1 < 1 || width1 < 1 || height2 < 1 || width2 < 1) {
         System.err.print("The \"height\" and \"width\" properties of the JSON files must have a value of at least 1");
+        System.exit(1);
+      }
+      if (width1 != height2 && width2 != height1) {
+        System.err.print("One of the two matrices' \"width\" must match the other matrice's \"height\""
+          + "for the multiplication to be doable");
         System.exit(1);
       }
 
       try {
-        matrixCreators[0] = new MatrixFromJSONGenerator(height, width, seed, isSimpleMatrix);
-        matrixCreators[1] = new MatrixFromJSONGenerator(width, height, seed, isSimpleMatrix);
+        matrixCreators[0] = new MatrixFromJSONGenerator(height1, width1, seed, isSimpleMatrix);
+        matrixCreators[1] = new MatrixFromJSONGenerator(height2, width2, seed, isSimpleMatrix);
         threads[0] = new Thread(matrixCreators[0]);
         threads[1] = new Thread(matrixCreators[1]);
         threads[0].start();

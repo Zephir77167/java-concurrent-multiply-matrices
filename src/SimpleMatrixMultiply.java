@@ -5,7 +5,6 @@ public class SimpleMatrixMultiply {
       System.exit(1);
     }
 
-    Timer timer1 = new Timer(), timer2 = new Timer(), timer3 = new Timer();
     boolean verbose = false;
     String filePath = args[0];
 
@@ -17,6 +16,7 @@ public class SimpleMatrixMultiply {
       filePath = args[1];
     }
 
+    Timer timer1 = new Timer();
     timer1.start();
     AMatrix[] matrices = MatricesCreator.createMatrices(filePath, true);
     timer1.end();
@@ -26,22 +26,32 @@ public class SimpleMatrixMultiply {
       matrices[1].parsablePrint();
     }
 
-    System.out.println("Computing m1 * m2...");
-    timer2.start();
-    AMatrix result1 = matrices[0].multiplyBy(matrices[1]);
-    timer2.end();
-    System.out.println("Done! Time spent computing m1 * m2: " + timer2.getEllapsedTime() + "ms");
-    if (verbose) {
-      result1.prettyPrint();
+    if (matrices[0].getWidth() == matrices[1].getHeight()) {
+      Timer timer2 = new Timer();
+      System.out.println("Computing m1 * m2...");
+      timer2.start();
+      AMatrix result1 = matrices[0].multiplyBy(matrices[1]);
+      timer2.end();
+      System.out.println("Done! Time spent computing m1 * m2: " + timer2.getEllapsedTime() + "ms");
+      if (verbose) {
+        result1.prettyPrint();
+      }
+    } else {
+      System.out.println("Skipping m1 * m2 as it is not doable");
     }
 
-    System.out.println("Computing m2 * m1...");
-    timer3.start();
-    AMatrix result2 = matrices[1].multiplyBy(matrices[0]);
-    timer3.end();
-    System.out.println("Done! Time spent computing m2 * m1: " + timer3.getEllapsedTime() + "ms");
-    if (verbose) {
-      result2.prettyPrint();
+    if (matrices[1].getWidth() == matrices[0].getHeight()) {
+      Timer timer3 = new Timer();
+      System.out.println("Computing m2 * m1...");
+      timer3.start();
+      AMatrix result2 = matrices[1].multiplyBy(matrices[0]);
+      timer3.end();
+      System.out.println("Done! Time spent computing m2 * m1: " + timer3.getEllapsedTime() + "ms");
+      if (verbose) {
+        result2.prettyPrint();
+      }
+    } else {
+      System.out.println("Skipping m2 * m1 as it is not doable");
     }
   }
 }
