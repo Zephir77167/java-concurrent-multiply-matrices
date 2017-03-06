@@ -3,16 +3,36 @@ class SimpleMatrix extends AMatrix {
     super(height, width, array);
   }
 
-  private long multiplyLineByColumn(AMatrix m2, int line, int column) {
-    AMatrix m1 = this;
+  class LineCalculator implements Runnable {
+    AMatrix _m1;
+    AMatrix _m2;
+    long[] _resultArray;
+    int _resultSideSize;
+    int _line;
 
-    long result = 0;
-
-    for (int i = 0; i < m1.getWidth(); ++i) {
-      result += m1.getArray()[line * m1.getWidth() + i] * m2.getArray()[i * m2.getWidth() + column];
+    LineCalculator(AMatrix m1, AMatrix m2, long[] resultArray, int resultSideSize, int line) {
+      _m1 = m1;
+      _m2 = m2;
+      _resultArray = resultArray;
+      _resultSideSize = resultSideSize;
+      _line = line;
     }
 
-    return result;
+    private long multiplyLineByColumn(int column) {
+      long result = 0;
+
+      for (int i = 0; i < _m1.getWidth(); ++i) {
+        result += _m1.getArray()[_line * _m1.getWidth() + i] * _m2.getArray()[i * _m2.getWidth() + column];
+      }
+
+      return result;
+    }
+
+    public void run () {
+      for (int i = 0; i < _resultSideSize; ++i) {
+        _resultArray[_line * _resultSideSize + i] = multiplyLineByColumn(i);
+      }
+    }
   }
 
   AMatrix multiplyBy(AMatrix m2) {
@@ -20,11 +40,19 @@ class SimpleMatrix extends AMatrix {
 
     int resultSideSize = m1.getHeight();
     long[] resultArray = new long[resultSideSize * resultSideSize];
+    Thread[] threads = new Thread[resultSideSize];
 
     for (int i = 0; i < resultSideSize; ++i) {
-      for (int j = 0; j < resultSideSize; ++j) {
-        resultArray[i * resultSideSize + j] = multiplyLineByColumn(m2, i, j);
+      threads[i] = new Thread(new LineCalculator(m1, m2, resultArray, resultSideSize, i));
+      threads[i].start();
+    }
+
+    try {
+      for (int i = 0; i < resultSideSize; ++i) {
+        threads[i].join();
       }
+    } catch (InterruptedException e) {
+      System.err.println("Thread supposed to calculate line has been unexpectedly interrupted");
     }
 
     return new SimpleMatrix(resultSideSize, resultSideSize, resultArray);

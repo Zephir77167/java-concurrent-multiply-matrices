@@ -88,7 +88,6 @@ class MatricesCreator {
         threads[1].join();
       } catch (InterruptedException e) {
         System.err.println("Thread supposed to parse matrice has been unexpectedly interrupted");
-        System.exit(1);
       }
 
       matrices[0] = matrixCreators[0].getResult();
