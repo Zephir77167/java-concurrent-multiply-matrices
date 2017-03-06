@@ -22,9 +22,13 @@ abstract class AMatrix {
   }
 
   void prettyPrint() {
-    for (int i = 0; i < _array.length; i++) {
-      if (i != 0 && i % _width == 0) {
-        System.out.println();
+    for (int i = 0; i < _array.length; ++i) {
+      if (i != 0) {
+        if (i % _width == 0) {
+          System.out.println();
+        } else {
+          System.out.print(", ");
+        }
       }
 
       long value = _array[i];
@@ -52,7 +56,7 @@ abstract class AMatrix {
   }
 
   void parsablePrint() {
-    for (int i = 0; i < _array.length; i++) {
+    for (int i = 0; i < _array.length; ++i) {
       if (i != 0) {
         if (i % _width == 0) {
           System.out.println();

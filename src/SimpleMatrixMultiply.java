@@ -26,7 +26,9 @@ public class SimpleMatrixMultiply {
       matrices[1].parsablePrint();
     }
 
-    if (matrices[0].getWidth() == matrices[1].getHeight()) {
+    if (matrices[0].getWidth() != matrices[1].getHeight()) {
+      System.out.println("Skipping m1 * m2 as it is not doable");
+    } else {
       Timer timer2 = new Timer();
       System.out.println("Computing m1 * m2...");
       timer2.start();
@@ -36,11 +38,13 @@ public class SimpleMatrixMultiply {
       if (verbose) {
         result1.prettyPrint();
       }
-    } else {
-      System.out.println("Skipping m1 * m2 as it is not doable");
     }
 
-    if (matrices[1].getWidth() == matrices[0].getHeight()) {
+    if (matrices[1].getWidth() != matrices[0].getHeight()) {
+      System.out.println("Skipping m2 * m1 as it is not doable");
+    } else if (matrices[0].getHeight() == matrices[1].getHeight() && matrices[0].getWidth() == matrices[1].getWidth()) {
+      System.out.println("Skipping m2 * m1 as it is the same as m1 * m2");
+    } else {
       Timer timer3 = new Timer();
       System.out.println("Computing m2 * m1...");
       timer3.start();
@@ -50,8 +54,6 @@ public class SimpleMatrixMultiply {
       if (verbose) {
         result2.prettyPrint();
       }
-    } else {
-      System.out.println("Skipping m2 * m1 as it is not doable");
     }
   }
 }

@@ -18,19 +18,12 @@ class SimpleMatrix extends AMatrix {
       _line = line;
     }
 
-    private long multiplyLineByColumn(int column) {
-      long result = 0;
-
-      for (int i = 0; i < _m1.getWidth(); ++i) {
-        result += _m1.getArray()[_line * _m1.getWidth() + i] * _m2.getArray()[i * _m2.getWidth() + column];
-      }
-
-      return result;
-    }
-
     public void run () {
-      for (int i = 0; i < _resultWidth; ++i) {
-        _resultArray[_line * _resultWidth + i] = multiplyLineByColumn(i);
+      for (int k = 0; k < _m1.getWidth(); ++k) {
+        for (int j = 0; j < _resultWidth; ++j) {
+          _resultArray[_line * _resultWidth + j] +=
+            _m1.getArray()[_line * _m1.getWidth() + k] * _m2.getArray()[k * _m2.getWidth() + j];
+        }
       }
     }
   }
