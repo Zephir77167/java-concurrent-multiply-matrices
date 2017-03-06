@@ -20,24 +20,26 @@ public class SimpleMatrixMultiply {
     timer1.start();
     AMatrix[] matrices = MatricesCreator.createMatrices(filePath, true);
     timer1.end();
-    System.out.println("Time spent generating matrices: " + timer1.getEllapsedTime());
+    System.out.println("Time spent generating matrices: " + timer1.getEllapsedTime() + "ms");
     if (verbose) {
       matrices[0].parsablePrint();
       matrices[1].parsablePrint();
     }
 
+    System.out.println("Computing m1 * m2...");
     timer2.start();
     AMatrix result1 = matrices[0].multiplyBy(matrices[1]);
     timer2.end();
-    System.out.println("Time spent doing m1 * m2: " + timer2.getEllapsedTime());
+    System.out.println("Done! Time spent computing m1 * m2: " + timer2.getEllapsedTime() + "ms");
     if (verbose) {
       result1.prettyPrint();
     }
 
+    System.out.println("Computing m2 * m1...");
     timer3.start();
     AMatrix result2 = matrices[1].multiplyBy(matrices[0]);
     timer3.end();
-    System.out.println("Time spent doing m2 * m1: " + timer3.getEllapsedTime());
+    System.out.println("Done! Time spent computing m2 * m1: " + timer3.getEllapsedTime() + "ms");
     if (verbose) {
       result2.prettyPrint();
     }
