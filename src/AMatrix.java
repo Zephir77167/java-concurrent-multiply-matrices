@@ -1,9 +1,9 @@
 abstract class AMatrix {
   private int _height;
   private int _width;
-  private long[] _array;
+  private long[][] _array;
 
-  AMatrix(int height, int width, long[] array) {
+  AMatrix(int height, int width, long[][] array) {
     _height = height;
     _width = width;
     _array = array;
@@ -17,34 +17,40 @@ abstract class AMatrix {
     return _width;
   }
 
-  long[] getArray() {
+  long[][] getArray() {
     return _array;
   }
 
   void prettyPrint() {
-    for (int i = 0; i < _array.length; i++) {
-      if (i != 0 && i % _width == 0) {
+    for (int i = 0; i < _height; ++i) {
+      if (i != 0) {
         System.out.println();
       }
 
-      long value = _array[i];
-      int nbDecimals = 0;
+      for (int j = 0; j < _width; ++j) {
+        if (j != 0) {
+          System.out.print(", ");
+        }
 
-      while (value >= 10 || value <= -10) {
-        nbDecimals += 1;
-        value /= 10;
-      }
+        long value = _array[i][j];
+        int nbDecimals = 0;
 
-      String formattingSpaces = "";
-      for (int j = nbDecimals; j < 5; ++j) {
-        formattingSpaces += " ";
-      }
-      if (value >= 0) {
-        formattingSpaces += " ";
-      }
+        while (value >= 10 || value <= -10) {
+          nbDecimals += 1;
+          value /= 10;
+        }
 
-      System.out.print(formattingSpaces);
-      System.out.print(_array[i]);
+        String formattingSpaces = "";
+        for (int k = nbDecimals; k < 5; ++k) {
+          formattingSpaces += " ";
+        }
+        if (value >= 0) {
+          formattingSpaces += " ";
+        }
+
+        System.out.print(formattingSpaces);
+        System.out.print(_array[i][j]);
+      }
     }
 
     System.out.println();
@@ -52,16 +58,18 @@ abstract class AMatrix {
   }
 
   void parsablePrint() {
-    for (int i = 0; i < _array.length; i++) {
+    for (int i = 0; i < _height; ++i) {
       if (i != 0) {
-        if (i % _width == 0) {
-          System.out.println();
-        } else {
-          System.out.print(", ");
-        }
+        System.out.println();
       }
 
-      System.out.print(_array[i]);
+      for (int j = 0; j < _width; ++j) {
+        if (j != 0) {
+          System.out.print(", ");
+        }
+
+        System.out.print(_array[i][j]);
+      }
     }
 
     System.out.println();

@@ -1,16 +1,16 @@
 class SimpleMatrix extends AMatrix {
-  SimpleMatrix(int height, int width, long[] array) {
+  SimpleMatrix(int height, int width, long[][] array) {
     super(height, width, array);
   }
 
   class LineCalculator implements Runnable {
     AMatrix _m1;
     AMatrix _m2;
-    long[] _resultArray;
+    long[][] _resultArray;
     int _resultWidth;
     int _line;
 
-    LineCalculator(AMatrix m1, AMatrix m2, long[] resultArray, int resultWidth, int line) {
+    LineCalculator(AMatrix m1, AMatrix m2, long[][] resultArray, int resultWidth, int line) {
       _m1 = m1;
       _m2 = m2;
       _resultArray = resultArray;
@@ -21,16 +21,18 @@ class SimpleMatrix extends AMatrix {
     private long multiplyLineByColumn(int column) {
       long result = 0;
 
-      for (int i = 0; i < _m1.getWidth(); ++i) {
-        result += _m1.getArray()[_line * _m1.getWidth() + i] * _m2.getArray()[i * _m2.getWidth() + column];
+      for (int k = 0; k < _m1.getWidth(); ++k) {
+        result += _m1.getArray()[_line][k] * _m2.getArray()[k][column];
       }
 
       return result;
     }
 
     public void run () {
-      for (int i = 0; i < _resultWidth; ++i) {
-        _resultArray[_line * _resultWidth + i] = multiplyLineByColumn(i);
+      for (int k = 0; k < _m1.getWidth(); ++k) {
+        for (int j = 0; j < _resultWidth; ++j) {
+          _resultArray[_line][j] += _m1.getArray()[_line][k] * _m2.getArray()[k][j];
+        }
       }
     }
   }
@@ -40,7 +42,7 @@ class SimpleMatrix extends AMatrix {
 
     int resultHeight = m1.getHeight();
     int resultWidth = m2.getWidth();
-    long[] resultArray = new long[resultHeight * resultWidth];
+    long[][] resultArray = new long[resultHeight][resultWidth];
     Thread[] threads = new Thread[resultHeight];
 
     for (int i = 0; i < resultHeight; ++i) {

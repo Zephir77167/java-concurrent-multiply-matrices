@@ -27,12 +27,13 @@ class MatricesCreator {
     }
 
     public void run () {
-      int size = _height * _width;
-      long[] array = new long[size];
+      long[][] array = new long[_height][_width];
       Random random = new Random(_seed);
 
-      for (int i = 0; i < size; ++i) {
-        array[i] = random.nextInt(MATRICES_VALUES_BOUND * 2) - MATRICES_VALUES_BOUND;
+      for (int i = 0; i < _height; ++i) {
+        for (int j = 0; j < _width; ++j) {
+          array[i][j] = random.nextInt(MATRICES_VALUES_BOUND * 2) - MATRICES_VALUES_BOUND;
+        }
       }
 
       if (_isSimpleMatrix) {
