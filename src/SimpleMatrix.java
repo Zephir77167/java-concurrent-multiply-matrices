@@ -52,7 +52,7 @@ class SimpleMatrix extends AMatrix {
         threads[i].join();
       }
     } catch (InterruptedException e) {
-      System.err.println("Thread supposed to calculate line has been unexpectedly interrupted");
+      System.err.println("Thread supposed to compute line has been unexpectedly interrupted");
     }
 
     return new SimpleMatrix(resultSideSize, resultSideSize, resultArray);
