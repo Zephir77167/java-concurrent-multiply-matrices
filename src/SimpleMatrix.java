@@ -1,5 +1,5 @@
 class SimpleMatrix extends AMatrix {
-  private int NB_THREADS = Runtime.getRuntime().availableProcessors();
+  private int NB_THREADS_AVAILABLE = Runtime.getRuntime().availableProcessors();
 
   private AMatrix _m1;
   private AMatrix _m2;
@@ -39,16 +39,20 @@ class SimpleMatrix extends AMatrix {
     _resultWidth = _m2.getWidth();
     _resultArray = new long[_resultHeight * _resultWidth];
 
-    Thread[] threads = new Thread[NB_THREADS];
-    int sectionSize = _resultHeight / NB_THREADS;
+    int nbThreads = _resultHeight > NB_THREADS_AVAILABLE ? NB_THREADS_AVAILABLE : _resultHeight;
+    Thread[] threads = new Thread[nbThreads];
+    int sectionSize = _resultHeight / nbThreads;
 
-    for (int i = 0; i < NB_THREADS; ++i) {
-      threads[i] = new Thread(new SectionCalculator(i * sectionSize, (i + 1) * sectionSize));
+    for (int i = 0; i < nbThreads; ++i) {
+      int start = i * sectionSize;
+      int end = (i == nbThreads - 1 ? _resultHeight : (i + 1) * sectionSize);
+
+      threads[i] = new Thread(new SectionCalculator(start, end));
       threads[i].start();
     }
 
     try {
-      for (int i = 0; i < NB_THREADS; ++i) {
+      for (int i = 0; i < nbThreads; ++i) {
         threads[i].join();
       }
     } catch (InterruptedException e) {
