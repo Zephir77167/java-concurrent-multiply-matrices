@@ -38,7 +38,7 @@ class MatricesCreator {
       if (_isSimpleMatrix) {
         _result = new SimpleMatrix(_height, _width, array);
       } else {
-        _result = null;
+        _result = new AdvancedMatrix(_height, _width, array);
       }
     }
   }

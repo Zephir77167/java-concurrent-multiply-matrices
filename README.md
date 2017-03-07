@@ -21,12 +21,14 @@ It takes the path to a JSON file containing 5 properties:
 ```
 javac -cp "src;libs/*" -d "out" src/*.java
 java -cp "out;libs/*" SimpleMatrixMultiply resources/matrices-2000-3000.json
+java -cp "out;libs/*" AdvancedMatrixMultiply resources/matrices-2000-3000.json
 ```
 
 - Linux
 ```
 javac -cp "src:libs/*" -d "out" src/*.java
 java -cp "out:libs/*" SimpleMatrixMultiply resources/matrices-2000-3000.json
+java -cp "out:libs/*" AdvancedMatrixMultiply resources/matrices-2000-3000.json
 ```
 
 <hr />
