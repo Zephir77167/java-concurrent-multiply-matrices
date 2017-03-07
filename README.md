@@ -43,7 +43,7 @@ List of files to test on (in resources/):
 
 Running the program with `-v` displays the 2 generated matrices and the 2 results `m1 * m2` and `m2 * m1`
 
-Results can be checked on (easier using matrices-15-10-10-5.json): http://wims.unice.fr/wims/wims.cgi?session=3ICB518C69.3&+lang=en&+module=tool%2Flinear%2Fmatmult
+Results can be checked on (easier using the 2 first files): http://wims.unice.fr/wims/wims.cgi?session=3ICB518C69.3&+lang=en&+module=tool%2Flinear%2Fmatmult
 
 <h2>License</h2>
 
