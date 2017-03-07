@@ -35,7 +35,7 @@ class SimpleMatrix extends AMatrix {
     _resultWidth = _m2.getWidth();
     _resultArray = new long[_resultHeight * _resultWidth];
 
-    Thread[] threads = new Thread[_resultHeight];
+    Thread[] threads = new Thread[_m1.getWidth()];
 
     for (int k = 0; k < _m1.getWidth(); ++k) {
       threads[k] = new Thread(new LineCalculator(k));
@@ -43,7 +43,7 @@ class SimpleMatrix extends AMatrix {
     }
 
     try {
-      for (int i = 0; i < _resultHeight; ++i) {
+      for (int i = 0; i < _m1.getWidth(); ++i) {
         threads[i].join();
       }
     } catch (InterruptedException e) {
