@@ -34,12 +34,12 @@ java -cp "out:libs/*" AdvancedMatrixMultiply resources/matrices-2000-3000-3000-2
 <hr />
 
 List of files to test on (in resources/):
-- matrices-2-2-2-2.json
+- matrices-1-1-1-1.json
 - matrices-5-2-20-5.json
 - matrices-9-9-9-9.json
 - matrices-15-10-10-5.json
-- matrices-2000-2000-2000-3000.json
 - matrices-2000-3000-3000-2000.json
+- matrices-3001-2001-2001-3001.json
 - matrices-4000-4000-4000-4000.json
 - matrices-5000-7500-7500-10000.json
 

@@ -41,7 +41,7 @@ class SimpleMatrix extends AMatrix {
 
     int nbThreads = _resultHeight > NB_THREADS_AVAILABLE ? NB_THREADS_AVAILABLE : _resultHeight;
     Thread[] threads = new Thread[nbThreads];
-    int sectionSize = _resultHeight / nbThreads;
+    int sectionSize = _resultHeight / (nbThreads > 1 ? (nbThreads - (_resultHeight % nbThreads != 0 ? 1 : 0)) : nbThreads);
 
     for (int i = 0; i < nbThreads; ++i) {
       int start = i * sectionSize;
