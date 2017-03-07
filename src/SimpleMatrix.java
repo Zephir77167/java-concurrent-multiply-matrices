@@ -1,5 +1,5 @@
 class SimpleMatrix extends AMatrix {
-  int NB_THREADS = 4;
+  private int NB_THREADS = Runtime.getRuntime().availableProcessors();
 
   private AMatrix _m1;
   private AMatrix _m2;
