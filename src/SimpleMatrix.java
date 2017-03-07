@@ -1,6 +1,4 @@
 class SimpleMatrix extends AMatrix {
-  int NB_THREADS = 4;
-
   private AMatrix _m1;
   private AMatrix _m2;
   private int _resultHeight;
