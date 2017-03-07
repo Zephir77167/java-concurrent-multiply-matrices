@@ -1,4 +1,6 @@
 class SimpleMatrix extends AMatrix {
+  private int NB_THREADS = Runtime.getRuntime().availableProcessors();
+
   private AMatrix _m1;
   private AMatrix _m2;
   private int _resultHeight;
@@ -9,18 +11,22 @@ class SimpleMatrix extends AMatrix {
     super(height, width, array);
   }
 
-  class LineCalculator implements Runnable {
-    int _i;
+  class SectionCalculator implements Runnable {
+    int _start;
+    int _end;
 
-    LineCalculator(int i) {
-      _i = i;
+    SectionCalculator(int start, int end) {
+      _start = start;
+      _end = end;
     }
 
     public void run () {
-      for (int k = 0; k < _m1.getWidth(); ++k) {
-        for (int j = 0; j < _resultWidth; ++j) {
-          _resultArray[_i * _resultWidth + j] +=
-            _m1.getArray()[_i * _m1.getWidth() + k] * _m2.getArray()[k * _m2.getWidth() + j];
+      for (int i = _start; i < _end; ++i) {
+        for (int k = 0; k < _m1.getWidth(); ++k) {
+          for (int j = 0; j < _resultWidth; ++j) {
+            _resultArray[i * _resultWidth + j] +=
+              _m1.getArray()[i * _m1.getWidth() + k] * _m2.getArray()[k * _m2.getWidth() + j];
+          }
         }
       }
     }
@@ -33,16 +39,16 @@ class SimpleMatrix extends AMatrix {
     _resultWidth = _m2.getWidth();
     _resultArray = new long[_resultHeight * _resultWidth];
 
-    int nbThreads = _resultHeight;
-    Thread[] threads = new Thread[nbThreads];
+    Thread[] threads = new Thread[NB_THREADS];
+    int sectionSize = _resultHeight / NB_THREADS;
 
-    for (int i = 0; i < nbThreads; ++i) {
-      threads[i] = new Thread(new LineCalculator(i));
+    for (int i = 0; i < NB_THREADS; ++i) {
+      threads[i] = new Thread(new SectionCalculator(i * sectionSize, (i + 1) * sectionSize));
       threads[i].start();
     }
 
     try {
-      for (int i = 0; i < nbThreads; ++i) {
+      for (int i = 0; i < NB_THREADS; ++i) {
         threads[i].join();
       }
     } catch (InterruptedException e) {
