@@ -32,11 +32,12 @@ java -cp "out:libs/*" SimpleMatrixMultiply resources/matrices-2000-3000.json
 <hr />
 
 List of files to test on (in resources/):
+- matrices-5-2-20-5.json
 - matrices-15-10-10-5.json
-- matrices-1000-1000-1000-1000.json
-- matrices-1500-1000-1000-1000.json
 - matrices-2000-2000-2000-3000.json
 - matrices-2000-3000-3000-2000.json
+- matrices-4000-4000-4000-4000.json
+- matrices-5000-7500-7500-10000.json
 
 Running the program with `-v` displays the 2 generated matrices and the 2 results `m1 * m2` and `m2 * m1`
 
