@@ -10,17 +10,17 @@ class SimpleMatrix extends AMatrix {
   }
 
   class LineCalculator implements Runnable {
-    int _k;
+    int _i;
 
-    LineCalculator(int k) {
-      _k = k;
+    LineCalculator(int i) {
+      _i = i;
     }
 
     public void run () {
-      for (int i = 0; i < _resultHeight; ++i) {
+      for (int k = 0; k < _m1.getWidth(); ++k) {
         for (int j = 0; j < _resultWidth; ++j) {
-          _resultArray[i * _resultWidth + j] +=
-            _m1.getArray()[i * _m1.getWidth() + _k] * _m2.getArray()[_k * _m2.getWidth() + j];
+          _resultArray[_i * _resultWidth + j] +=
+            _m1.getArray()[_i * _m1.getWidth() + k] * _m2.getArray()[k * _m2.getWidth() + j];
         }
       }
     }
@@ -33,15 +33,16 @@ class SimpleMatrix extends AMatrix {
     _resultWidth = _m2.getWidth();
     _resultArray = new long[_resultHeight * _resultWidth];
 
-    Thread[] threads = new Thread[_m1.getWidth()];
+    int nbThreads = _resultHeight;
+    Thread[] threads = new Thread[nbThreads];
 
-    for (int k = 0; k < _m1.getWidth(); ++k) {
-      threads[k] = new Thread(new LineCalculator(k));
-      threads[k].start();
+    for (int i = 0; i < nbThreads; ++i) {
+      threads[i] = new Thread(new LineCalculator(i));
+      threads[i].start();
     }
 
     try {
-      for (int i = 0; i < _m1.getWidth(); ++i) {
+      for (int i = 0; i < nbThreads; ++i) {
         threads[i].join();
       }
     } catch (InterruptedException e) {
