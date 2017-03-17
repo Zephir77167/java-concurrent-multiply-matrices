@@ -72,5 +72,8 @@ abstract class AMatrix {
     System.out.println();
   }
 
+  abstract AMatrix add(AMatrix m2);
+  abstract AMatrix subtract(AMatrix m2);
   abstract AMatrix multiplyBy(AMatrix m2);
+  abstract AMatrix multiplyBy(AMatrix m2, int availableCores);
 }

@@ -32,6 +32,36 @@ class SimpleMatrix extends AMatrix {
     }
   }
 
+  AMatrix add(AMatrix m2) {
+    AMatrix m1 = this;
+    long resultArray[] = new long[m1.getHeight() * m1.getWidth()];
+
+    for (int i = 0; i < m1.getHeight(); ++i) {
+      for (int j = 0; j < m1.getWidth(); ++j) {
+        int index = i * m1.getWidth() + j;
+
+        resultArray[index] = m1.getArray()[index] + m2.getArray()[index];
+      }
+    }
+
+    return new SimpleMatrix(m1.getHeight(), m1.getWidth(), resultArray);
+  }
+
+  AMatrix subtract(AMatrix m2) {
+    AMatrix m1 = this;
+    long resultArray[] = new long[m1.getHeight() * m1.getWidth()];
+
+    for (int i = 0; i < m1.getHeight(); ++i) {
+      for (int j = 0; j < m1.getWidth(); ++j) {
+        int index = i * m1.getWidth() + j;
+
+        resultArray[index] = m1.getArray()[index] - m2.getArray()[index];
+      }
+    }
+
+    return new SimpleMatrix(m1.getHeight(), m1.getWidth(), resultArray);
+  }
+
   AMatrix multiplyBy(AMatrix m2) {
     _m1 = this;
     _m2 = m2;
@@ -60,5 +90,11 @@ class SimpleMatrix extends AMatrix {
     }
 
     return new SimpleMatrix(_resultHeight, _resultWidth, _resultArray);
+  }
+
+  AMatrix multiplyBy(AMatrix m2, int availableCores) {
+    NB_THREADS_AVAILABLE = availableCores;
+
+    return this.multiplyBy(m2);
   }
 }
