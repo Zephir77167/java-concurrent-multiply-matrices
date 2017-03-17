@@ -4,11 +4,19 @@ abstract class AMatrix {
   private int _height;
   private int _width;
   private long[] _array;
+  private boolean _isMatrixEmpty = false;
 
   AMatrix(int height, int width, long[] array) {
     _height = height;
     _width = width;
     _array = array;
+  }
+
+  AMatrix(int height, int width, long[] array, boolean isMatrixEmpty) {
+    _height = height;
+    _width = width;
+    _array = array;
+    _isMatrixEmpty = isMatrixEmpty;
   }
 
   int getHeight() {
@@ -21,6 +29,10 @@ abstract class AMatrix {
 
   long[] getArray() {
     return _array;
+  }
+
+  boolean isEmpty() {
+    return _isMatrixEmpty;
   }
 
   void prettyPrint() {
