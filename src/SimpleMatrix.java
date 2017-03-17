@@ -91,4 +91,12 @@ class SimpleMatrix extends AMatrix {
 
     return new SimpleMatrix(_resultHeight, _resultWidth, _resultArray);
   }
+
+  AMatrix multiplyBy(AMatrix m2, boolean doMultiThread) {
+    if (!doMultiThread) {
+      NB_THREADS_AVAILABLE = 0;
+    }
+
+    return this.multiplyBy(m2);
+  }
 }

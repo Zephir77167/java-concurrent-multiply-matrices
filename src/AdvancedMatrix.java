@@ -10,7 +10,6 @@ class AdvancedMatrix extends AMatrix {
 
   private AMatrix[] _A;
   private AMatrix[] _B;
-  private AMatrix[] _M;
   private long[][] _C;
 
   private int _tmpSideSize;
@@ -53,41 +52,6 @@ class AdvancedMatrix extends AMatrix {
             resultArray[recipientMatrixId][recipientMatrixIndex] = 0;
           }
         }
-      }
-    }
-  }
-
-  class SubMatrixComputer implements Runnable {
-    int _id;
-
-    SubMatrixComputer(int id) {
-      _id = id;
-    }
-
-    public void run () {
-      switch (_id) {
-        case 0:
-          computeM0();
-          break;
-        case 1:
-          computeM1();
-          break;
-        case 2:
-          computeM2();
-          break;
-        case 3:
-          computeM3();
-          break;
-        case 4:
-          computeM4();
-          break;
-        case 5:
-          computeM5();
-          break;
-        case 6:
-          computeM6();
-          break;
-        default:
       }
     }
   }
@@ -217,74 +181,24 @@ class AdvancedMatrix extends AMatrix {
     }
   }
 
-  private void computeM0() {
-    _M[0] = (_A[0].add(_A[3])).multiplyBy(_B[0].add(_B[3]));
+  private AMatrix[] computeAllM() {
+    return new AMatrix[]{
+      (_A[0].add(_A[3])).multiplyBy(_B[0].add(_B[3]), false),
+      (_A[2].add(_A[3])).multiplyBy(_B[0], false),
+      _A[0].multiplyBy(_B[1].subtract(_B[3]), false),
+      _A[3].multiplyBy(_B[2].subtract(_B[0]), false),
+      (_A[0].add(_A[1])).multiplyBy(_B[3], false),
+      (_A[2].subtract(_A[0])).multiplyBy(_B[0].add(_B[1]), false),
+      (_A[1].subtract(_A[3])).multiplyBy(_B[2].add(_B[3]), false),
+    };
   }
 
-  private void computeM1() {
-    _M[1] = (_A[2].add(_A[3])).multiplyBy(_B[0]);
-  }
-
-  private void computeM2() {
-    _M[2] = _A[0].multiplyBy(_B[1].subtract(_B[3]));
-  }
-
-  private void computeM3() {
-    _M[3] = _A[3].multiplyBy(_B[2].subtract(_B[0]));
-  }
-
-  private void computeM4() {
-    _M[4] = (_A[0].add(_A[1])).multiplyBy(_B[3]);
-  }
-
-  private void computeM5() {
-    _M[5] = (_A[2].subtract(_A[0])).multiplyBy(_B[0].add(_B[1]));
-  }
-
-  private void computeM6() {
-    _M[6] = (_A[1].subtract(_A[3])).multiplyBy(_B[2].add(_B[3]));
-  }
-
-  private void computeAllM(int nbThreads) {
-    Thread[] threads = new Thread[nbThreads];
-    _M = new AMatrix[nbThreads];
-
-    for (int i = 0; i < 7; ++i) {
-      threads[i] = new Thread(new SubMatrixComputer(i));
-      threads[i].start();
-    }
-
-    try {
-      for (int i = 0; i < nbThreads; ++i) {
-        threads[i].join();
-      }
-    } catch (InterruptedException e) {
-      System.err.println("Thread supposed to compute line has been unexpectedly interrupted");
-    }
-  }
-
-  private void computeC0() {
-    _C[0] = _M[0].add(_M[3]).subtract(_M[4]).add(_M[6]).getArray();
-  }
-
-  private void computeC1() {
-    _C[1] = _M[2].add(_M[4]).getArray();
-  }
-
-  private void computeC2() {
-    _C[2] = _M[1].add(_M[3]).getArray();
-  }
-
-  private void computeC3() {
-    _C[3] = _M[0].subtract(_M[1]).add(_M[2]).add(_M[5]).getArray();
-  }
-
-  private void computeAllC() {
+  private void computeAllC(AMatrix[] M) {
     _C = new long[SPLIT_SIZE][];
-    computeC0();
-    computeC1();
-    computeC2();
-    computeC3();
+    _C[0] = M[0].add(M[3]).subtract(M[4]).add(M[6]).getArray();;
+    _C[1] = M[2].add(M[4]).getArray();
+    _C[2] = M[1].add(M[3]).getArray();
+    _C[3] = M[0].subtract(M[1]).add(M[2]).add(M[5]).getArray();
   }
 
   private void runParallelMerge(int nbThreads) {
@@ -339,10 +253,18 @@ class AdvancedMatrix extends AMatrix {
     }
 
     createBlockMatrixFromArrays();
-    computeAllM(7);
-    computeAllC();
+    AMatrix[] M = computeAllM();
+    computeAllC(M);
     mergeMatricesBlocks(nbThreads);
 
     return new AdvancedMatrix(_resultHeight, _resultWidth, _resultArray);
+  }
+
+  AMatrix multiplyBy(AMatrix m2, boolean doMultiThread) {
+    if (!doMultiThread) {
+      NB_THREADS_AVAILABLE = 0;
+    }
+
+    return this.multiplyBy(m2);
   }
 }
