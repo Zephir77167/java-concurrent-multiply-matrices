@@ -5,8 +5,66 @@ class AdvancedMatrix extends AMatrix {
   private int _resultWidth;
   private int _chunkSideSize;
 
+  private AMatrix[] _A;
+  private AMatrix[] _B;
+
+  private AMatrix _M0;
+  private AMatrix _M1;
+  private AMatrix _M2;
+  private AMatrix _M3;
+  private AMatrix _M4;
+  private AMatrix _M5;
+  private AMatrix _M6;
+
   AdvancedMatrix(int height, int width, long[] array) {
     super(height, width, array);
+  }
+
+  class SubMatrixCalculator implements Runnable {
+    int _start;
+    int _end;
+    AMatrix[] _A;
+    AMatrix[] _B;
+
+    SubMatrixCalculator(int start, int end, AMatrix[] A, AMatrix[] B) {
+      _start = start;
+      _end = end;
+      _A = A;
+      _B = B;
+    }
+
+    private void compute(int index) {
+      switch (index) {
+        case 0:
+          _M0 = (_A[0].add(_A[3])).multiplyBy(_B[0].add(_B[3]), false);
+          break;
+        case 1:
+          _M1 = (_A[2].add(_A[3])).multiplyBy(_B[0], false);
+          break;
+        case 2:
+          _M2 = _A[0].multiplyBy(_B[1].subtract(_B[3]), false);
+          break;
+        case 3:
+          _M3 = _A[3].multiplyBy(_B[2].subtract(_B[0]), false);
+          break;
+        case 4:
+          _M4 = (_A[0].add(_A[1])).multiplyBy(_B[3], false);
+          break;
+        case 5:
+          _M5 = (_A[2].subtract(_A[0])).multiplyBy(_B[0].add(_B[1]), false);
+          break;
+        case 6:
+          _M6 = (_A[1].subtract(_A[3])).multiplyBy(_B[2].add(_B[3]), false);
+          break;
+        default:
+      }
+    }
+
+    public void run () {
+      for(int i = _start; i < _end; ++i) {
+        compute(i);
+      }
+    }
   }
 
   private static SimpleMatrix getSimpleMatrixFromAdvancedMatrix(AMatrix m) {
@@ -65,7 +123,7 @@ class AdvancedMatrix extends AMatrix {
     AMatrix[] block = new AMatrix[SPLIT_SIZE];
 
     for (int i = 0; i < SPLIT_SIZE; ++i) {
-      block[i] = new SimpleMatrix(_chunkSideSize, _chunkSideSize, splitArray[i]);
+      block[i] = new AdvancedMatrix(_chunkSideSize, _chunkSideSize, splitArray[i]);
     }
 
     return block;
@@ -98,6 +156,31 @@ class AdvancedMatrix extends AMatrix {
     return createBlockMatrixFromSplitArray(resultArrays);
   }
 
+  private void runParallelCompute(AMatrix[] A, AMatrix[] B, int nbThreads) {
+    Thread[] threads = new Thread[nbThreads];
+    int sectionSize = (7 / nbThreads) + 1;
+
+    for (int i = 0; i < nbThreads; ++i) {
+      int start = i * sectionSize;
+      int end = (i == nbThreads - 1 ? 7 : (i + 1) * sectionSize);
+
+      threads[i] = new Thread(new SubMatrixCalculator(start, end, A, B));
+      threads[i].start();
+    }
+
+    try {
+      for (int i = 0; i < nbThreads; ++i) {
+        threads[i].join();
+      }
+    } catch (InterruptedException e) {
+      System.err.println("Thread supposed to compute line has been unexpectedly interrupted");
+    }
+  }
+
+  private void runSequentialCompute(AMatrix[] A, AMatrix[] B) {
+    new SubMatrixCalculator(0, 7, A, B).run();
+  }
+
   private AMatrix mergeMatricesBlocks(AMatrix C0, AMatrix C1, AMatrix C2, AMatrix C3) {
     long[] resultArray = new long[_resultHeight * _resultWidth];
     long[][] sendingArrays = new long[][]{ C0.getArray(), C1.getArray(), C2.getArray(), C3.getArray() };
@@ -121,24 +204,24 @@ class AdvancedMatrix extends AMatrix {
     _resultWidth = m2.getWidth();
     _chunkSideSize = getChunkSideSize(this.getHeight(), this.getWidth(), m2.getHeight(), m2.getWidth());
 
+    int nbThreads = 7 > NB_THREADS_AVAILABLE ? NB_THREADS_AVAILABLE : 7;
+
     AMatrix[] A = split(this);
     AMatrix[] B = split(m2);
     if (A == null || B == null) {
       return getSimpleMatrixFromAdvancedMatrix(this).multiplyBy(getSimpleMatrixFromAdvancedMatrix(m2));
     }
 
-    AMatrix M0 = (A[0].add(A[3])).multiplyBy(B[0].add(B[3]));
-    AMatrix M1 = (A[2].add(A[3])).multiplyBy(B[0]);
-    AMatrix M2 = A[0].multiplyBy(B[1].subtract(B[3]));
-    AMatrix M3 = A[3].multiplyBy(B[2].subtract(B[0]));
-    AMatrix M4 = (A[0].add(A[1])).multiplyBy(B[3]);
-    AMatrix M5 = (A[2].subtract(A[0])).multiplyBy(B[0].add(B[1]));
-    AMatrix M6 = (A[1].subtract(A[3])).multiplyBy(B[2].add(B[3]));
+    if (nbThreads > 1) {
+      runParallelCompute(A, B, nbThreads);
+    } else {
+      runSequentialCompute(A, B);
+    }
 
-    AMatrix C0 = M0.add(M3).subtract(M4).add(M6);
-    AMatrix C1 = M2.add(M4);
-    AMatrix C2 = M1.add(M3);
-    AMatrix C3 = M0.subtract(M1).add(M2).add(M5);
+    AMatrix C0 = _M0.add(_M3).subtract(_M4).add(_M6);
+    AMatrix C1 = _M2.add(_M4);
+    AMatrix C2 = _M1.add(_M3);
+    AMatrix C3 = _M0.subtract(_M1).add(_M2).add(_M5);
 
     return mergeMatricesBlocks(C0, C1, C2, C3);
   }

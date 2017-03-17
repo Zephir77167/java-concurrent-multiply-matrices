@@ -60,7 +60,7 @@ class SimpleMatrix extends AMatrix {
     return new SimpleMatrix(m1.getHeight(), m1.getWidth(), resultArray);
   }
 
-  void runParallelCompute(int nbThreads) {
+  private void runParallelCompute(int nbThreads) {
     Thread[] threads = new Thread[nbThreads];
     int sectionSize = _resultHeight / nbThreads;
 
@@ -94,7 +94,7 @@ class SimpleMatrix extends AMatrix {
 
     int nbThreads = _resultHeight > NB_THREADS_AVAILABLE ? NB_THREADS_AVAILABLE : _resultHeight;
 
-    if (nbThreads != 0) {
+    if (nbThreads > 1) {
       runParallelCompute(nbThreads);
     } else {
       runSequentialCompute();

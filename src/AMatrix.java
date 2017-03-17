@@ -83,6 +83,6 @@ abstract class AMatrix {
       NB_THREADS_AVAILABLE = 0;
     }
 
-    return multiplyBy(m2);
+    return this.multiplyBy(m2);
   }
 }
