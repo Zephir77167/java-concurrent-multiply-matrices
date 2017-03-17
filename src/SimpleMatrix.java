@@ -85,21 +85,6 @@ class SimpleMatrix extends AMatrix {
     new SectionCalculator(0, _resultHeight).run();
   }
 
-  AMatrix multiplyByInt(int nb) {
-    int sideSize = this.getHeight();
-    long[] resultArray = new long[sideSize * sideSize];
-
-    for (int i = 0; i < sideSize; ++i) {
-      for (int j = 0; j < sideSize; ++j) {
-        int index = i * sideSize + j;
-
-        resultArray[index] = this.getArray()[index] * -1;
-      }
-    }
-
-    return new SimpleMatrix(sideSize, sideSize, resultArray);
-  }
-
   AMatrix multiplyBy(AMatrix m2) {
     _m1 = this;
     _m2 = m2;

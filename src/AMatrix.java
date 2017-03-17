@@ -83,7 +83,6 @@ abstract class AMatrix {
   abstract AMatrix add(AMatrix m2);
   abstract AMatrix subtract(AMatrix m2);
   abstract AMatrix multiplyBy(AMatrix m2);
-  abstract AMatrix multiplyByInt(int nb);
 
   AMatrix multiplyBy(AMatrix m2, boolean doMultiThread) {
     if (!doMultiThread) {

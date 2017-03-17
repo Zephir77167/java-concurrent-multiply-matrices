@@ -55,7 +55,7 @@ class AdvancedMatrix extends AMatrix {
       }
     }
 
-    public void run () {
+    public void run() {
       for(int i = _start; i < _end; ++i) {
         compute(i);
       }
@@ -89,7 +89,7 @@ class AdvancedMatrix extends AMatrix {
       return this;
     }
     if (this.isEmpty()) {
-      return m2.multiplyByInt(-1);
+      return ((AdvancedMatrix)(m2)).multiplyByInt(-1);
     }
 
     int sideSize = this.getHeight();
@@ -260,14 +260,13 @@ class AdvancedMatrix extends AMatrix {
     _resultWidth = m2.getWidth();
     _chunkSideSize = getChunkSideSize(this.getHeight(), this.getWidth(), m2.getHeight(), m2.getWidth());
 
-    int nbThreads = 7 > NB_THREADS_AVAILABLE ? NB_THREADS_AVAILABLE : 7;
-
     AMatrix[] A = split(this);
     AMatrix[] B = split(m2);
     if (A == null || B == null) {
       return this.simpleMultiply(m2);
     }
 
+    int nbThreads = 7 > NB_THREADS_AVAILABLE ? NB_THREADS_AVAILABLE : 7;
     _M = new AMatrix[7];
     if (nbThreads > 1) {
       runParallelCompute(A, B, nbThreads);
