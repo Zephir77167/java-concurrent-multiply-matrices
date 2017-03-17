@@ -158,7 +158,7 @@ class AdvancedMatrix extends AMatrix {
 
   private void runParallelCompute(AMatrix[] A, AMatrix[] B, int nbThreads) {
     Thread[] threads = new Thread[nbThreads];
-    int sectionSize = (7 / nbThreads) + 1;
+    int sectionSize = (7 / nbThreads) + (7 % nbThreads != 0 ? 1 : 0);
 
     for (int i = 0; i < nbThreads; ++i) {
       int start = i * sectionSize;

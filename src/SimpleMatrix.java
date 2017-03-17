@@ -62,7 +62,7 @@ class SimpleMatrix extends AMatrix {
 
   private void runParallelCompute(int nbThreads) {
     Thread[] threads = new Thread[nbThreads];
-    int sectionSize = _resultHeight / nbThreads;
+    int sectionSize = (_resultHeight / nbThreads) + (_resultHeight % nbThreads != 0 ? 1 : 0);
 
     for (int i = 0; i < nbThreads; ++i) {
       int start = i * sectionSize;
