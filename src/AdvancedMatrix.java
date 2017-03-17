@@ -1,80 +1,8 @@
 class AdvancedMatrix extends AMatrix {
-  private int NB_THREADS_AVAILABLE = Runtime.getRuntime().availableProcessors();
-  // Must be a power of 2 - works with 4 for now
   private int SPLIT_SIZE = 4;
-
-  private AMatrix[] _matrices;
-  private int _resultHeight;
-  private int _resultWidth;
-  private long[] _resultArray;
-
-  private int _tmpSideSize;
-  private long[][][] _splitMatricesArrays;
 
   AdvancedMatrix(int height, int width, long[] array) {
     super(height, width, array);
-  }
-
-  class MatrixSplitter implements Runnable {
-    int _start;
-    int _end;
-    int _matrixId;
-
-    MatrixSplitter(int start, int end, int matrixId) {
-      _start = start;
-      _end = end;
-      _matrixId = matrixId;
-    }
-
-    public void run () {
-      if (_tmpSideSize * 2 < SPLIT_SIZE) {
-        _splitMatricesArrays[_matrixId] = null;
-        return;
-      }
-
-      long[][] resultArray = new long[SPLIT_SIZE][_tmpSideSize * _tmpSideSize];
-
-      for (int i = _start; i < _end; ++i) {
-        for (int j = 0; j < _tmpSideSize * 2; ++j) {
-          int recipientMatrixId = (j >= _tmpSideSize ? 1 : 0) + (i >= _tmpSideSize ? 2 : 0);
-          int recipientMatrixIndex =
-            (i - (recipientMatrixId >= 2 ? _tmpSideSize : 0)) * _tmpSideSize
-              + j - (recipientMatrixId == 1 || recipientMatrixId == 3 ? _tmpSideSize : 0);
-
-          if (i < _matrices[_matrixId].getHeight() && j < _matrices[_matrixId].getWidth()) {
-            _splitMatricesArrays[_matrixId][recipientMatrixId][recipientMatrixIndex] =
-              _matrices[_matrixId].getArray()[i * _matrices[_matrixId].getWidth() + j];
-          } else {
-            resultArray[recipientMatrixId][recipientMatrixIndex] = 0;
-          }
-        }
-      }
-    }
-  }
-
-  class MatrixBlocksMerger implements Runnable {
-    int _start;
-    int _end;
-    long[][] _C;
-
-    MatrixBlocksMerger(int start, int end, long[][] C) {
-      _start = start;
-      _end = end;
-      _C = C;
-    }
-
-    public void run () {
-      for (int i = _start; i < _end; ++i) {
-        for (int j = 0; j < _resultWidth; ++j) {
-          int sendingMatrixId = (j >= _tmpSideSize ? 1 : 0) + (i >= _tmpSideSize ? 2 : 0);
-          int sendingMatrixIndex =
-            (i - (sendingMatrixId >= 2 ? _tmpSideSize : 0)) * _tmpSideSize
-              + j - (sendingMatrixId == 1 || sendingMatrixId == 3 ? _tmpSideSize : 0);
-
-          _resultArray[i * _resultWidth + j] = _C[sendingMatrixId][sendingMatrixIndex];
-        }
-      }
-    }
   }
 
   private static SimpleMatrix getSimpleMatrixFromAdvancedMatrix(AMatrix m) {
@@ -121,7 +49,7 @@ class AdvancedMatrix extends AMatrix {
     return power;
   }
 
-  private int getTmpSideSize(int height1, int width1, int height2, int width2) {
+  private int getSplitSideSize(int height1, int width1, int height2, int width2) {
     int m1GreaterSide = height1 > width1 ? height1 : width1;
     int m2GreaterSide = height2 > width2 ? height2 : width2;
     int greaterSide = m1GreaterSide > m2GreaterSide ? m1GreaterSide : m2GreaterSide;
@@ -129,71 +57,56 @@ class AdvancedMatrix extends AMatrix {
     return getNextPowerOfTwo(greaterSide) / (SPLIT_SIZE / 2);
   }
 
-  private AMatrix[][] createBlockMatrixFromArrays() {
-    AMatrix[] A = new AMatrix[SPLIT_SIZE];
+  private AMatrix[] createBlockMatrixFromSplitArray(long[][] splitArray, int splitSideSize) {
+    AMatrix[] block = new AMatrix[SPLIT_SIZE];
+
     for (int i = 0; i < SPLIT_SIZE; ++i) {
-      A[i] = new AdvancedMatrix(_tmpSideSize, _tmpSideSize, _splitMatricesArrays[0][i]);
+      block[i] = new AdvancedMatrix(splitSideSize, splitSideSize, splitArray[i]);
     }
 
-    AMatrix[] B = new AMatrix[SPLIT_SIZE];
-    for (int i = 0; i < SPLIT_SIZE; ++i) {
-      B[i] = new AdvancedMatrix(_tmpSideSize, _tmpSideSize, _splitMatricesArrays[1][i]);
-    }
-
-    return new AMatrix[][]{ A, B };
+    return block;
   }
 
-  private void runParallelSplit(int nbThreads, int matrixId) {
-    Thread[] threads = new Thread[nbThreads];
-    int sectionSize = _tmpSideSize * 2 / nbThreads;
+  private AMatrix[] split(AMatrix m, int splitSideSize) {
+    int fullSize = splitSideSize * 2;
 
-    for (int i = 0; i < nbThreads; ++i) {
-      int start = i * sectionSize;
-      int end = (i == nbThreads - 1 ? _tmpSideSize * 2 : (i + 1) * sectionSize);
-
-      threads[i] = new Thread(new MatrixSplitter(start, end, matrixId));
-      threads[i].start();
+    if (fullSize < SPLIT_SIZE) {
+      return null;
     }
 
-    try {
-      for (int i = 0; i < nbThreads; ++i) {
-        threads[i].join();
+    long[][] resultArray = new long[SPLIT_SIZE][fullSize * fullSize];
+
+    for (int i = 0; i < fullSize; ++i) {
+      for (int j = 0; j < fullSize; ++j) {
+        int recipientMatrixId = (j >= splitSideSize ? 1 : 0) + (i >= splitSideSize ? 2 : 0);
+        int recipientMatrixIndex =
+          (i - (recipientMatrixId >= 2 ? splitSideSize : 0)) * splitSideSize
+            + j - (recipientMatrixId == 1 || recipientMatrixId == 3 ? splitSideSize : 0);
+
+        if (i < m.getHeight() && j < m.getWidth()) {
+          resultArray[recipientMatrixId][recipientMatrixIndex] = m.getArray()[i * m.getWidth() + j];
+        } else {
+          resultArray[recipientMatrixId][recipientMatrixIndex] = 0;
+        }
       }
-    } catch (InterruptedException e) {
-      System.err.println("Thread supposed to compute line has been unexpectedly interrupted");
     }
+
+    return createBlockMatrixFromSplitArray(resultArray, splitSideSize);
   }
 
-  private void runSequentialSplit(int matrixId) {
-    new MatrixSplitter(0, _resultHeight, matrixId).run();
-  }
-
-  private void splitMatrices(int nbThreads) {
-    if (nbThreads > 1) {
-      runParallelSplit(nbThreads / 2 + nbThreads % 2, 0);
-    } else {
-      runSequentialSplit(0);
-    }
-    if (nbThreads > 2) {
-      runParallelSplit(nbThreads / 2, 1);
-    } else {
-      runSequentialSplit(1);
-    }
-  }
-
-  private AMatrix[] computeAllM(AMatrix[] A, AMatrix[] B) {
+  private AMatrix[] computeAM(AMatrix[] A, AMatrix[] B) {
     return new AMatrix[]{
-      (A[0].add(A[3])).multiplyBy(B[0].add(B[3]), false),
-      (A[2].add(A[3])).multiplyBy(B[0], false),
-      A[0].multiplyBy(B[1].subtract(B[3]), false),
-      A[3].multiplyBy(B[2].subtract(B[0]), false),
-      (A[0].add(A[1])).multiplyBy(B[3], false),
-      (A[2].subtract(A[0])).multiplyBy(B[0].add(B[1]), false),
-      (A[1].subtract(A[3])).multiplyBy(B[2].add(B[3]), false),
+      (A[0].add(A[3])).multiplyBy(B[0].add(B[3])),
+      (A[2].add(A[3])).multiplyBy(B[0]),
+      A[0].multiplyBy(B[1].subtract(B[3])),
+      A[3].multiplyBy(B[2].subtract(B[0])),
+      (A[0].add(A[1])).multiplyBy(B[3]),
+      (A[2].subtract(A[0])).multiplyBy(B[0].add(B[1])),
+      (A[1].subtract(A[3])).multiplyBy(B[2].add(B[3])),
     };
   }
 
-  private long[][] computeAllC(AMatrix[] M) {
+  private long[][] computeAC(AMatrix[] M) {
     return new long[][]{
       M[0].add(M[3]).subtract(M[4]).add(M[6]).getArray(),
       M[2].add(M[4]).getArray(),
@@ -202,70 +115,37 @@ class AdvancedMatrix extends AMatrix {
     };
   }
 
-  private void runParallelMerge(int nbThreads, long[][] C) {
-    Thread[] threads = new Thread[nbThreads];
-    int sectionSize = _resultHeight / nbThreads;
+  private AMatrix mergeMatricesBlocks(long[][] C, int splitSideSize, int resultHeight, int resultWidth) {
+    long[] resultArray = new long[resultHeight * resultWidth];
 
-    for (int i = 0; i < nbThreads; ++i) {
-      int start = i * sectionSize;
-      int end = (i == nbThreads - 1 ? _resultHeight : (i + 1) * sectionSize);
+    for (int i = 0; i < resultHeight; ++i) {
+      for (int j = 0; j < resultWidth; ++j) {
+        int sendingMatrixId = (j >= splitSideSize ? 1 : 0) + (i >= splitSideSize ? 2 : 0);
+        int sendingMatrixIndex =
+          (i - (sendingMatrixId >= 2 ? splitSideSize : 0)) * splitSideSize
+            + j - (sendingMatrixId == 1 || sendingMatrixId == 3 ? splitSideSize : 0);
 
-      threads[i] = new Thread(new MatrixBlocksMerger(start, end, C));
-      threads[i].start();
-    }
-
-    try {
-      for (int i = 0; i < nbThreads; ++i) {
-        threads[i].join();
+        resultArray[i * resultWidth + j] = C[sendingMatrixId][sendingMatrixIndex];
       }
-    } catch (InterruptedException e) {
-      System.err.println("Thread supposed to compute line has been unexpectedly interrupted");
     }
-  }
 
-  private void runSequentialMerge(long[][] C) {
-    new MatrixBlocksMerger(0, _resultHeight, C).run();
-  }
-
-  private void mergeMatricesBlocks(int nbThreads, long[][] C) {
-    if (nbThreads > 1) {
-      runParallelMerge(nbThreads, C);
-    } else {
-      runSequentialMerge(C);
-    }
+    return new AdvancedMatrix(resultHeight, resultWidth, resultArray);
   }
 
   AMatrix multiplyBy(AMatrix m2) {
-    _matrices = new AMatrix[2];
-    _matrices[0] = this;
-    _matrices[1] = m2;
-    _resultHeight = this.getHeight();
-    _resultWidth = m2.getWidth();
-    _resultArray = new long[_resultHeight * _resultWidth];
+    int resultHeight = this.getHeight();
+    int resultWidth = m2.getWidth();
 
-    _tmpSideSize = getTmpSideSize(this.getHeight(), this.getWidth(), m2.getHeight(), m2.getWidth());
-    _splitMatricesArrays = new long[2][SPLIT_SIZE][_tmpSideSize * _tmpSideSize];
+    int splitSideSize = getSplitSideSize(this.getHeight(), this.getWidth(), m2.getHeight(), m2.getWidth());
 
-    int nbThreads = _resultHeight > NB_THREADS_AVAILABLE ? NB_THREADS_AVAILABLE : _resultHeight;
-
-    splitMatrices(nbThreads);
-    if (_splitMatricesArrays[0] == null || _splitMatricesArrays[1] == null) {
+    AMatrix[] A = split(this, splitSideSize);
+    AMatrix[] B = split(m2, splitSideSize);
+    if (A == null || B == null) {
       return getSimpleMatrixFromAdvancedMatrix(this).multiplyBy(getSimpleMatrixFromAdvancedMatrix(m2));
     }
 
-    AMatrix[][] blocks = createBlockMatrixFromArrays();
-    AMatrix[] M = computeAllM(blocks[0], blocks[1]);
-    long[][] C = computeAllC(M);
-    mergeMatricesBlocks(nbThreads, C);
-
-    return new AdvancedMatrix(_resultHeight, _resultWidth, _resultArray);
-  }
-
-  AMatrix multiplyBy(AMatrix m2, boolean doMultiThread) {
-    if (!doMultiThread) {
-      NB_THREADS_AVAILABLE = 0;
-    }
-
-    return this.multiplyBy(m2);
+    AMatrix[] M = computeAM(A, B);
+    long[][] C = computeAC(M);
+    return mergeMatricesBlocks(C, splitSideSize, resultHeight, resultWidth);
   }
 }
