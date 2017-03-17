@@ -1,6 +1,10 @@
 class AdvancedMatrix extends AMatrix {
   private int SPLIT_SIZE = 4;
 
+  private int _resultHeight;
+  private int _resultWidth;
+  private int _chunkSideSize;
+
   AdvancedMatrix(int height, int width, long[] array) {
     super(height, width, array);
   }
@@ -49,7 +53,7 @@ class AdvancedMatrix extends AMatrix {
     return power;
   }
 
-  private int getSplitSideSize(int height1, int width1, int height2, int width2) {
+  private int getChunkSideSize(int height1, int width1, int height2, int width2) {
     int m1GreaterSide = height1 > width1 ? height1 : width1;
     int m2GreaterSide = height2 > width2 ? height2 : width2;
     int greaterSide = m1GreaterSide > m2GreaterSide ? m1GreaterSide : m2GreaterSide;
@@ -57,18 +61,18 @@ class AdvancedMatrix extends AMatrix {
     return getNextPowerOfTwo(greaterSide) / (SPLIT_SIZE / 2);
   }
 
-  private AMatrix[] createBlockMatrixFromSplitArray(int splitSideSize, long[][] splitArray) {
+  private AMatrix[] createBlockMatrixFromSplitArray(long[][] splitArray) {
     AMatrix[] block = new AMatrix[SPLIT_SIZE];
 
     for (int i = 0; i < SPLIT_SIZE; ++i) {
-      block[i] = new AdvancedMatrix(splitSideSize, splitSideSize, splitArray[i]);
+      block[i] = new AdvancedMatrix(_chunkSideSize, _chunkSideSize, splitArray[i]);
     }
 
     return block;
   }
 
-  private AMatrix[] split(AMatrix m, int splitSideSize) {
-    int fullSize = splitSideSize * 2;
+  private AMatrix[] split(AMatrix m) {
+    int fullSize = _chunkSideSize * 2;
 
     if (fullSize < SPLIT_SIZE) {
       return null;
@@ -78,10 +82,10 @@ class AdvancedMatrix extends AMatrix {
 
     for (int i = 0; i < fullSize; ++i) {
       for (int j = 0; j < fullSize; ++j) {
-        int recipientMatrixId = (j >= splitSideSize ? 1 : 0) + (i >= splitSideSize ? 2 : 0);
+        int recipientMatrixId = (j >= _chunkSideSize ? 1 : 0) + (i >= _chunkSideSize ? 2 : 0);
         int recipientMatrixIndex =
-          (i - (recipientMatrixId >= 2 ? splitSideSize : 0)) * splitSideSize
-            + j - (recipientMatrixId == 1 || recipientMatrixId == 3 ? splitSideSize : 0);
+          (i - (recipientMatrixId >= 2 ? _chunkSideSize : 0)) * _chunkSideSize
+            + j - (recipientMatrixId == 1 || recipientMatrixId == 3 ? _chunkSideSize : 0);
 
         if (i < m.getHeight() && j < m.getWidth()) {
           resultArrays[recipientMatrixId][recipientMatrixIndex] = m.getArray()[i * m.getWidth() + j];
@@ -91,7 +95,7 @@ class AdvancedMatrix extends AMatrix {
       }
     }
 
-    return createBlockMatrixFromSplitArray(splitSideSize, resultArrays);
+    return createBlockMatrixFromSplitArray(resultArrays);
   }
 
   private AMatrix[] computeM(AMatrix[] A, AMatrix[] B) {
@@ -115,36 +119,36 @@ class AdvancedMatrix extends AMatrix {
     };
   }
 
-  private AMatrix mergeMatricesBlocks(AMatrix[] C, int splitSideSize, int resultHeight, int resultWidth) {
-    long[] resultArray = new long[resultHeight * resultWidth];
+  private AMatrix mergeMatricesBlocks(AMatrix[] C) {
+    long[] resultArray = new long[_resultHeight * _resultWidth];
 
-    for (int i = 0; i < resultHeight; ++i) {
-      for (int j = 0; j < resultWidth; ++j) {
-        int sendingMatrixId = (j >= splitSideSize ? 1 : 0) + (i >= splitSideSize ? 2 : 0);
+    for (int i = 0; i < _resultHeight; ++i) {
+      for (int j = 0; j < _resultWidth; ++j) {
+        int sendingMatrixId = (j >= _chunkSideSize ? 1 : 0) + (i >= _chunkSideSize ? 2 : 0);
         int sendingMatrixIndex =
-          (i - (sendingMatrixId >= 2 ? splitSideSize : 0)) * splitSideSize
-            + j - (sendingMatrixId == 1 || sendingMatrixId == 3 ? splitSideSize : 0);
+          (i - (sendingMatrixId >= 2 ? _chunkSideSize : 0)) * _chunkSideSize
+            + j - (sendingMatrixId == 1 || sendingMatrixId == 3 ? _chunkSideSize : 0);
 
-        resultArray[i * resultWidth + j] = C[sendingMatrixId].getArray()[sendingMatrixIndex];
+        resultArray[i * _resultWidth + j] = C[sendingMatrixId].getArray()[sendingMatrixIndex];
       }
     }
 
-    return new AdvancedMatrix(resultHeight, resultWidth, resultArray);
+    return new AdvancedMatrix(_resultHeight, _resultWidth, resultArray);
   }
 
   AMatrix multiplyBy(AMatrix m2) {
-    int resultHeight = this.getHeight();
-    int resultWidth = m2.getWidth();
-    int splitSideSize = getSplitSideSize(this.getHeight(), this.getWidth(), m2.getHeight(), m2.getWidth());
+    _resultHeight = this.getHeight();
+    _resultWidth = m2.getWidth();
+    _chunkSideSize = getChunkSideSize(this.getHeight(), this.getWidth(), m2.getHeight(), m2.getWidth());
 
-    AMatrix[] A = split(this, splitSideSize);
-    AMatrix[] B = split(m2, splitSideSize);
+    AMatrix[] A = split(this);
+    AMatrix[] B = split(m2);
     if (A == null || B == null) {
       return getSimpleMatrixFromAdvancedMatrix(this).multiplyBy(getSimpleMatrixFromAdvancedMatrix(m2));
     }
 
     AMatrix[] M = computeM(A, B);
     AMatrix[] C = computeC(M);
-    return mergeMatricesBlocks(C, splitSideSize, resultHeight, resultWidth);
+    return mergeMatricesBlocks(C);
   }
 }
