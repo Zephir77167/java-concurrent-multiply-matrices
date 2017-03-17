@@ -1,6 +1,4 @@
 class SimpleMatrix extends AMatrix {
-  private int NB_THREADS_AVAILABLE = Runtime.getRuntime().availableProcessors();
-
   private AMatrix _m1;
   private AMatrix _m2;
   private int _resultHeight;
@@ -62,14 +60,7 @@ class SimpleMatrix extends AMatrix {
     return new SimpleMatrix(m1.getHeight(), m1.getWidth(), resultArray);
   }
 
-  AMatrix multiplyBy(AMatrix m2) {
-    _m1 = this;
-    _m2 = m2;
-    _resultHeight = _m1.getHeight();
-    _resultWidth = _m2.getWidth();
-    _resultArray = new long[_resultHeight * _resultWidth];
-
-    int nbThreads = _resultHeight > NB_THREADS_AVAILABLE ? NB_THREADS_AVAILABLE : _resultHeight;
+  void runParallelCompute(int nbThreads) {
     Thread[] threads = new Thread[nbThreads];
     int sectionSize = _resultHeight / nbThreads;
 
@@ -87,6 +78,26 @@ class SimpleMatrix extends AMatrix {
       }
     } catch (InterruptedException e) {
       System.err.println("Thread supposed to compute line has been unexpectedly interrupted");
+    }
+  }
+
+  private void runSequentialCompute() {
+    new SectionCalculator(0, _resultHeight).run();
+  }
+
+  AMatrix multiplyBy(AMatrix m2) {
+    _m1 = this;
+    _m2 = m2;
+    _resultHeight = _m1.getHeight();
+    _resultWidth = _m2.getWidth();
+    _resultArray = new long[_resultHeight * _resultWidth];
+
+    int nbThreads = _resultHeight > NB_THREADS_AVAILABLE ? NB_THREADS_AVAILABLE : _resultHeight;
+
+    if (nbThreads != 0) {
+      runParallelCompute(nbThreads);
+    } else {
+      runSequentialCompute();
     }
 
     return new SimpleMatrix(_resultHeight, _resultWidth, _resultArray);
