@@ -91,10 +91,4 @@ class SimpleMatrix extends AMatrix {
 
     return new SimpleMatrix(_resultHeight, _resultWidth, _resultArray);
   }
-
-  AMatrix multiplyBy(AMatrix m2, int availableCores) {
-    NB_THREADS_AVAILABLE = availableCores;
-
-    return this.multiplyBy(m2);
-  }
 }
