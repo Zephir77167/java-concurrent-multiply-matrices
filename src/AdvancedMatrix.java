@@ -8,13 +8,7 @@ class AdvancedMatrix extends AMatrix {
   private AMatrix[] _A;
   private AMatrix[] _B;
 
-  private AMatrix _M0;
-  private AMatrix _M1;
-  private AMatrix _M2;
-  private AMatrix _M3;
-  private AMatrix _M4;
-  private AMatrix _M5;
-  private AMatrix _M6;
+  private AMatrix[] _M;
 
   AdvancedMatrix(int height, int width, long[] array) {
     super(height, width, array);
@@ -36,25 +30,25 @@ class AdvancedMatrix extends AMatrix {
     private void compute(int index) {
       switch (index) {
         case 0:
-          _M0 = (_A[0].add(_A[3])).multiplyBy(_B[0].add(_B[3]), false);
+          _M[0] = (_A[0].add(_A[3])).multiplyBy(_B[0].add(_B[3]), false);
           break;
         case 1:
-          _M1 = (_A[2].add(_A[3])).multiplyBy(_B[0], false);
+          _M[1] = (_A[2].add(_A[3])).multiplyBy(_B[0], false);
           break;
         case 2:
-          _M2 = _A[0].multiplyBy(_B[1].subtract(_B[3]), false);
+          _M[2] = _A[0].multiplyBy(_B[1].subtract(_B[3]), false);
           break;
         case 3:
-          _M3 = _A[3].multiplyBy(_B[2].subtract(_B[0]), false);
+          _M[3] = _A[3].multiplyBy(_B[2].subtract(_B[0]), false);
           break;
         case 4:
-          _M4 = (_A[0].add(_A[1])).multiplyBy(_B[3], false);
+          _M[4] = (_A[0].add(_A[1])).multiplyBy(_B[3], false);
           break;
         case 5:
-          _M5 = (_A[2].subtract(_A[0])).multiplyBy(_B[0].add(_B[1]), false);
+          _M[5] = (_A[2].subtract(_A[0])).multiplyBy(_B[0].add(_B[1]), false);
           break;
         case 6:
-          _M6 = (_A[1].subtract(_A[3])).multiplyBy(_B[2].add(_B[3]), false);
+          _M[6] = (_A[1].subtract(_A[3])).multiplyBy(_B[2].add(_B[3]), false);
           break;
         default:
       }
@@ -212,16 +206,17 @@ class AdvancedMatrix extends AMatrix {
       return getSimpleMatrixFromAdvancedMatrix(this).multiplyBy(getSimpleMatrixFromAdvancedMatrix(m2));
     }
 
+    _M = new AMatrix[7];
     if (nbThreads > 1) {
       runParallelCompute(A, B, nbThreads);
     } else {
       runSequentialCompute(A, B);
     }
 
-    AMatrix C0 = _M0.add(_M3).subtract(_M4).add(_M6);
-    AMatrix C1 = _M2.add(_M4);
-    AMatrix C2 = _M1.add(_M3);
-    AMatrix C3 = _M0.subtract(_M1).add(_M2).add(_M5);
+    AMatrix C0 = _M[0].add(_M[3]).subtract(_M[4]).add(_M[6]);
+    AMatrix C1 = _M[2].add(_M[4]);
+    AMatrix C2 = _M[1].add(_M[3]);
+    AMatrix C3 = _M[0].subtract(_M[1]).add(_M[2]).add(_M[5]);
 
     return mergeMatricesBlocks(C0, C1, C2, C3);
   }
