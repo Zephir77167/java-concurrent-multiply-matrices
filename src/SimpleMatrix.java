@@ -34,7 +34,7 @@ class SimpleMatrix extends AMatrix {
 
   AMatrix add(AMatrix m2) {
     AMatrix m1 = this;
-    long resultArray[] = new long[m1.getHeight() * m1.getWidth()];
+    long[] resultArray = new long[m1.getHeight() * m1.getWidth()];
 
     for (int i = 0; i < m1.getHeight(); ++i) {
       for (int j = 0; j < m1.getWidth(); ++j) {
@@ -49,7 +49,7 @@ class SimpleMatrix extends AMatrix {
 
   AMatrix subtract(AMatrix m2) {
     AMatrix m1 = this;
-    long resultArray[] = new long[m1.getHeight() * m1.getWidth()];
+    long[] resultArray = new long[m1.getHeight() * m1.getWidth()];
 
     for (int i = 0; i < m1.getHeight(); ++i) {
       for (int j = 0; j < m1.getWidth(); ++j) {
