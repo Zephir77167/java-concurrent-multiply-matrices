@@ -3,7 +3,7 @@ class AdvancedMatrix extends AMatrix {
   // Must be a power of 2 - works with 4 for now
   private int SPLIT_SIZE = 4;
 
-  private AMatrix[] _matrices = new AMatrix[2];
+  private AMatrix[] _matrices;
   private int _resultHeight;
   private int _resultWidth;
   private long[] _resultArray;
@@ -321,6 +321,7 @@ class AdvancedMatrix extends AMatrix {
   }
 
   AMatrix multiplyBy(AMatrix m2) {
+    _matrices = new AMatrix[2];
     _matrices[0] = this;
     _matrices[1] = m2;
     _resultHeight = this.getHeight();
