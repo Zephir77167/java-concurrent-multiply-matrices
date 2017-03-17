@@ -65,7 +65,7 @@ class AdvancedMatrix extends AMatrix {
     AMatrix[] block = new AMatrix[SPLIT_SIZE];
 
     for (int i = 0; i < SPLIT_SIZE; ++i) {
-      block[i] = new AdvancedMatrix(_chunkSideSize, _chunkSideSize, splitArray[i]);
+      block[i] = new SimpleMatrix(_chunkSideSize, _chunkSideSize, splitArray[i]);
     }
 
     return block;
@@ -98,29 +98,9 @@ class AdvancedMatrix extends AMatrix {
     return createBlockMatrixFromSplitArray(resultArrays);
   }
 
-  private AMatrix[] computeM(AMatrix[] A, AMatrix[] B) {
-    return new AMatrix[]{
-      (A[0].add(A[3])).multiplyBy(B[0].add(B[3])),
-      (A[2].add(A[3])).multiplyBy(B[0]),
-      A[0].multiplyBy(B[1].subtract(B[3])),
-      A[3].multiplyBy(B[2].subtract(B[0])),
-      (A[0].add(A[1])).multiplyBy(B[3]),
-      (A[2].subtract(A[0])).multiplyBy(B[0].add(B[1])),
-      (A[1].subtract(A[3])).multiplyBy(B[2].add(B[3])),
-    };
-  }
-
-  private AMatrix[] computeC(AMatrix[] M) {
-    return new AMatrix[]{
-      M[0].add(M[3]).subtract(M[4]).add(M[6]),
-      M[2].add(M[4]),
-      M[1].add(M[3]),
-      M[0].subtract(M[1]).add(M[2]).add(M[5]),
-    };
-  }
-
-  private AMatrix mergeMatricesBlocks(AMatrix[] C) {
+  private AMatrix mergeMatricesBlocks(AMatrix C0, AMatrix C1, AMatrix C2, AMatrix C3) {
     long[] resultArray = new long[_resultHeight * _resultWidth];
+    long[][] sendingArrays = new long[][]{ C0.getArray(), C1.getArray(), C2.getArray(), C3.getArray() };
 
     for (int i = 0; i < _resultHeight; ++i) {
       for (int j = 0; j < _resultWidth; ++j) {
@@ -129,7 +109,7 @@ class AdvancedMatrix extends AMatrix {
           (i - (sendingMatrixId >= 2 ? _chunkSideSize : 0)) * _chunkSideSize
             + j - (sendingMatrixId == 1 || sendingMatrixId == 3 ? _chunkSideSize : 0);
 
-        resultArray[i * _resultWidth + j] = C[sendingMatrixId].getArray()[sendingMatrixIndex];
+        resultArray[i * _resultWidth + j] = sendingArrays[sendingMatrixId][sendingMatrixIndex];
       }
     }
 
@@ -147,8 +127,19 @@ class AdvancedMatrix extends AMatrix {
       return getSimpleMatrixFromAdvancedMatrix(this).multiplyBy(getSimpleMatrixFromAdvancedMatrix(m2));
     }
 
-    AMatrix[] M = computeM(A, B);
-    AMatrix[] C = computeC(M);
-    return mergeMatricesBlocks(C);
+    AMatrix M0 = (A[0].add(A[3])).multiplyBy(B[0].add(B[3]));
+    AMatrix M1 = (A[2].add(A[3])).multiplyBy(B[0]);
+    AMatrix M2 = A[0].multiplyBy(B[1].subtract(B[3]));
+    AMatrix M3 = A[3].multiplyBy(B[2].subtract(B[0]));
+    AMatrix M4 = (A[0].add(A[1])).multiplyBy(B[3]);
+    AMatrix M5 = (A[2].subtract(A[0])).multiplyBy(B[0].add(B[1]));
+    AMatrix M6 = (A[1].subtract(A[3])).multiplyBy(B[2].add(B[3]));
+
+    AMatrix C0 = M0.add(M3).subtract(M4).add(M6);
+    AMatrix C1 = M2.add(M4);
+    AMatrix C2 = M1.add(M3);
+    AMatrix C3 = M0.subtract(M1).add(M2).add(M5);
+
+    return mergeMatricesBlocks(C0, C1, C2, C3);
   }
 }
