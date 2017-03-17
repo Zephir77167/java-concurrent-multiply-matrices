@@ -96,7 +96,7 @@ class AdvancedMatrix extends AMatrix {
       for (int j = 0; j < sideSize; ++j) {
         int index = i * sideSize + j;
 
-        resultArray[index] = this.getArray()[index] - m2.getArray()[index];
+        resultArray[index] = !this.isEmpty() ? this.getArray()[index] - m2.getArray()[index] : m2.getArray()[index] * -1;
       }
     }
 
