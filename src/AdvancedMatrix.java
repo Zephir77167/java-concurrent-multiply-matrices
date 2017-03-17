@@ -5,9 +5,6 @@ class AdvancedMatrix extends AMatrix {
   private int _resultWidth;
   private int _chunkSideSize;
 
-  private AMatrix[] _A;
-  private AMatrix[] _B;
-
   private AMatrix[] _M;
 
   AdvancedMatrix(int height, int width, long[] array) {
@@ -67,11 +64,12 @@ class AdvancedMatrix extends AMatrix {
 
   AMatrix add(AMatrix m2) {
     AMatrix m1 = this;
-    long[] resultArray = new long[m1.getHeight() * m1.getWidth()];
+    int sideSize = m1.getHeight();
+    long[] resultArray = new long[sideSize * sideSize];
 
-    for (int i = 0; i < m1.getHeight(); ++i) {
-      for (int j = 0; j < m1.getWidth(); ++j) {
-        int index = i * m1.getWidth() + j;
+    for (int i = 0; i < sideSize; ++i) {
+      for (int j = 0; j < sideSize; ++j) {
+        int index = i * sideSize + j;
 
         resultArray[index] = m1.getArray()[index] + m2.getArray()[index];
       }
@@ -82,11 +80,12 @@ class AdvancedMatrix extends AMatrix {
 
   AMatrix subtract(AMatrix m2) {
     AMatrix m1 = this;
-    long[] resultArray = new long[m1.getHeight() * m1.getWidth()];
+    int sideSize = m1.getHeight();
+    long[] resultArray = new long[sideSize * sideSize];
 
-    for (int i = 0; i < m1.getHeight(); ++i) {
-      for (int j = 0; j < m1.getWidth(); ++j) {
-        int index = i * m1.getWidth() + j;
+    for (int i = 0; i < sideSize; ++i) {
+      for (int j = 0; j < sideSize; ++j) {
+        int index = i * sideSize + j;
 
         resultArray[index] = m1.getArray()[index] - m2.getArray()[index];
       }
@@ -175,9 +174,8 @@ class AdvancedMatrix extends AMatrix {
     new SubMatrixCalculator(0, 7, A, B).run();
   }
 
-  private AMatrix mergeMatricesBlocks(AMatrix C0, AMatrix C1, AMatrix C2, AMatrix C3) {
+  private AMatrix mergeMatricesBlocks(AMatrix[] C) {
     long[] resultArray = new long[_resultHeight * _resultWidth];
-    long[][] sendingArrays = new long[][]{ C0.getArray(), C1.getArray(), C2.getArray(), C3.getArray() };
 
     for (int i = 0; i < _resultHeight; ++i) {
       for (int j = 0; j < _resultWidth; ++j) {
@@ -186,11 +184,28 @@ class AdvancedMatrix extends AMatrix {
           (i - (sendingMatrixId >= 2 ? _chunkSideSize : 0)) * _chunkSideSize
             + j - (sendingMatrixId == 1 || sendingMatrixId == 3 ? _chunkSideSize : 0);
 
-        resultArray[i * _resultWidth + j] = sendingArrays[sendingMatrixId][sendingMatrixIndex];
+        resultArray[i * _resultWidth + j] = C[sendingMatrixId].getArray()[sendingMatrixIndex];
       }
     }
 
     return new AdvancedMatrix(_resultHeight, _resultWidth, resultArray);
+  }
+
+  AMatrix simpleMultiply(AMatrix m2) {
+    AMatrix m1 = this;
+    int resultSideSize = m1.getHeight();
+    long[] resultArray = new long[resultSideSize * resultSideSize];
+
+    for (int i = 0; i < resultSideSize; ++i) {
+      for (int k = 0; k < resultSideSize; ++k) {
+        for (int j = 0; j < resultSideSize; ++j) {
+          resultArray[i * resultSideSize + j] +=
+            m1.getArray()[i * resultSideSize + k] * m2.getArray()[k * resultSideSize + j];
+        }
+      }
+    }
+
+    return new AdvancedMatrix(resultSideSize, resultSideSize, resultArray);
   }
 
   AMatrix multiplyBy(AMatrix m2) {
@@ -203,7 +218,7 @@ class AdvancedMatrix extends AMatrix {
     AMatrix[] A = split(this);
     AMatrix[] B = split(m2);
     if (A == null || B == null) {
-      return getSimpleMatrixFromAdvancedMatrix(this).multiplyBy(getSimpleMatrixFromAdvancedMatrix(m2));
+      return simpleMultiply(m2);
     }
 
     _M = new AMatrix[7];
@@ -213,11 +228,13 @@ class AdvancedMatrix extends AMatrix {
       runSequentialCompute(A, B);
     }
 
-    AMatrix C0 = _M[0].add(_M[3]).subtract(_M[4]).add(_M[6]);
-    AMatrix C1 = _M[2].add(_M[4]);
-    AMatrix C2 = _M[1].add(_M[3]);
-    AMatrix C3 = _M[0].subtract(_M[1]).add(_M[2]).add(_M[5]);
+    AMatrix[] C = new AMatrix[]{
+      _M[0].add(_M[3]).subtract(_M[4]).add(_M[6]),
+      _M[2].add(_M[4]),
+      _M[1].add(_M[3]),
+      _M[0].subtract(_M[1]).add(_M[2]).add(_M[5]),
+    };
 
-    return mergeMatricesBlocks(C0, C1, C2, C3);
+    return mergeMatricesBlocks(C);
   }
 }
