@@ -11,7 +11,7 @@ class AdvancedMatrix extends AMatrix {
 
   AMatrix add(AMatrix m2) {
     AMatrix m1 = this;
-    long resultArray[] = new long[m1.getHeight() * m1.getWidth()];
+    long[] resultArray = new long[m1.getHeight() * m1.getWidth()];
 
     for (int i = 0; i < m1.getHeight(); ++i) {
       for (int j = 0; j < m1.getWidth(); ++j) {
@@ -26,7 +26,7 @@ class AdvancedMatrix extends AMatrix {
 
   AMatrix subtract(AMatrix m2) {
     AMatrix m1 = this;
-    long resultArray[] = new long[m1.getHeight() * m1.getWidth()];
+    long[] resultArray = new long[m1.getHeight() * m1.getWidth()];
 
     for (int i = 0; i < m1.getHeight(); ++i) {
       for (int j = 0; j < m1.getWidth(); ++j) {
@@ -57,7 +57,7 @@ class AdvancedMatrix extends AMatrix {
     return getNextPowerOfTwo(greaterSide) / (SPLIT_SIZE / 2);
   }
 
-  private AMatrix[] createBlockMatrixFromSplitArray(long[][] splitArray, int splitSideSize) {
+  private AMatrix[] createBlockMatrixFromSplitArray(int splitSideSize, long[][] splitArray) {
     AMatrix[] block = new AMatrix[SPLIT_SIZE];
 
     for (int i = 0; i < SPLIT_SIZE; ++i) {
@@ -74,7 +74,7 @@ class AdvancedMatrix extends AMatrix {
       return null;
     }
 
-    long[][] resultArray = new long[SPLIT_SIZE][fullSize * fullSize];
+    long[][] resultArrays = new long[SPLIT_SIZE][fullSize * fullSize];
 
     for (int i = 0; i < fullSize; ++i) {
       for (int j = 0; j < fullSize; ++j) {
@@ -84,17 +84,17 @@ class AdvancedMatrix extends AMatrix {
             + j - (recipientMatrixId == 1 || recipientMatrixId == 3 ? splitSideSize : 0);
 
         if (i < m.getHeight() && j < m.getWidth()) {
-          resultArray[recipientMatrixId][recipientMatrixIndex] = m.getArray()[i * m.getWidth() + j];
+          resultArrays[recipientMatrixId][recipientMatrixIndex] = m.getArray()[i * m.getWidth() + j];
         } else {
-          resultArray[recipientMatrixId][recipientMatrixIndex] = 0;
+          resultArrays[recipientMatrixId][recipientMatrixIndex] = 0;
         }
       }
     }
 
-    return createBlockMatrixFromSplitArray(resultArray, splitSideSize);
+    return createBlockMatrixFromSplitArray(splitSideSize, resultArrays);
   }
 
-  private AMatrix[] computeAM(AMatrix[] A, AMatrix[] B) {
+  private AMatrix[] computeM(AMatrix[] A, AMatrix[] B) {
     return new AMatrix[]{
       (A[0].add(A[3])).multiplyBy(B[0].add(B[3])),
       (A[2].add(A[3])).multiplyBy(B[0]),
@@ -106,16 +106,16 @@ class AdvancedMatrix extends AMatrix {
     };
   }
 
-  private long[][] computeAC(AMatrix[] M) {
-    return new long[][]{
-      M[0].add(M[3]).subtract(M[4]).add(M[6]).getArray(),
-      M[2].add(M[4]).getArray(),
-      M[1].add(M[3]).getArray(),
-      M[0].subtract(M[1]).add(M[2]).add(M[5]).getArray(),
+  private AMatrix[] computeC(AMatrix[] M) {
+    return new AMatrix[]{
+      M[0].add(M[3]).subtract(M[4]).add(M[6]),
+      M[2].add(M[4]),
+      M[1].add(M[3]),
+      M[0].subtract(M[1]).add(M[2]).add(M[5]),
     };
   }
 
-  private AMatrix mergeMatricesBlocks(long[][] C, int splitSideSize, int resultHeight, int resultWidth) {
+  private AMatrix mergeMatricesBlocks(AMatrix[] C, int splitSideSize, int resultHeight, int resultWidth) {
     long[] resultArray = new long[resultHeight * resultWidth];
 
     for (int i = 0; i < resultHeight; ++i) {
@@ -125,7 +125,7 @@ class AdvancedMatrix extends AMatrix {
           (i - (sendingMatrixId >= 2 ? splitSideSize : 0)) * splitSideSize
             + j - (sendingMatrixId == 1 || sendingMatrixId == 3 ? splitSideSize : 0);
 
-        resultArray[i * resultWidth + j] = C[sendingMatrixId][sendingMatrixIndex];
+        resultArray[i * resultWidth + j] = C[sendingMatrixId].getArray()[sendingMatrixIndex];
       }
     }
 
@@ -135,7 +135,6 @@ class AdvancedMatrix extends AMatrix {
   AMatrix multiplyBy(AMatrix m2) {
     int resultHeight = this.getHeight();
     int resultWidth = m2.getWidth();
-
     int splitSideSize = getSplitSideSize(this.getHeight(), this.getWidth(), m2.getHeight(), m2.getWidth());
 
     AMatrix[] A = split(this, splitSideSize);
@@ -144,8 +143,8 @@ class AdvancedMatrix extends AMatrix {
       return getSimpleMatrixFromAdvancedMatrix(this).multiplyBy(getSimpleMatrixFromAdvancedMatrix(m2));
     }
 
-    AMatrix[] M = computeAM(A, B);
-    long[][] C = computeAC(M);
+    AMatrix[] M = computeM(A, B);
+    AMatrix[] C = computeC(M);
     return mergeMatricesBlocks(C, splitSideSize, resultHeight, resultWidth);
   }
 }
