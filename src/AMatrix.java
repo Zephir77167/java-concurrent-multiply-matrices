@@ -4,7 +4,6 @@ abstract class AMatrix {
   private int _height;
   private int _width;
   private long[] _array;
-  private boolean _isMatrixEmpty = false;
 
   AMatrix(int height, int width, long[] array) {
     _height = height;
@@ -12,12 +11,7 @@ abstract class AMatrix {
     _array = array;
   }
 
-  AMatrix(int height, int width, long[] array, boolean isMatrixEmpty) {
-    _height = height;
-    _width = width;
-    _array = array;
-    _isMatrixEmpty = isMatrixEmpty;
-  }
+  AMatrix() {}
 
   int getHeight() {
     return _height;
@@ -32,7 +26,7 @@ abstract class AMatrix {
   }
 
   boolean isEmpty() {
-    return _isMatrixEmpty;
+    return _array == null;
   }
 
   void prettyPrint() {
@@ -89,6 +83,7 @@ abstract class AMatrix {
   abstract AMatrix add(AMatrix m2);
   abstract AMatrix subtract(AMatrix m2);
   abstract AMatrix multiplyBy(AMatrix m2);
+  abstract AMatrix multiplyByInt(int nb);
 
   AMatrix multiplyBy(AMatrix m2, boolean doMultiThread) {
     if (!doMultiThread) {

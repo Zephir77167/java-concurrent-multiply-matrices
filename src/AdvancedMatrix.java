@@ -11,8 +11,8 @@ class AdvancedMatrix extends AMatrix {
     super(height, width, array);
   }
 
-  private AdvancedMatrix(int height, int width, long[] array, boolean isMatrixEmpty) {
-    super(height, width, array, isMatrixEmpty);
+  private AdvancedMatrix() {
+    super();
   }
 
   class SubMatrixCalculator implements Runnable {
@@ -88,6 +88,9 @@ class AdvancedMatrix extends AMatrix {
     if (m2.isEmpty()) {
       return this;
     }
+    if (this.isEmpty()) {
+      return m2.multiplyByInt(-1);
+    }
 
     int sideSize = this.getHeight();
     long[] resultArray = new long[sideSize * sideSize];
@@ -96,7 +99,7 @@ class AdvancedMatrix extends AMatrix {
       for (int j = 0; j < sideSize; ++j) {
         int index = i * sideSize + j;
 
-        resultArray[index] = !this.isEmpty() ? this.getArray()[index] - m2.getArray()[index] : m2.getArray()[index] * -1;
+        resultArray[index] = this.getArray()[index] - m2.getArray()[index];
       }
     }
 
@@ -125,12 +128,15 @@ class AdvancedMatrix extends AMatrix {
     AMatrix[] block = new AMatrix[SPLIT_SIZE];
 
     for (int i = 0; i < SPLIT_SIZE; ++i) {
-      block[i] = new AdvancedMatrix(_chunkSideSize, _chunkSideSize, splitArray[i], isMatrixEmpty[i]);
+      block[i] = !isMatrixEmpty[i] ?
+        new AdvancedMatrix(_chunkSideSize, _chunkSideSize, splitArray[i]) :
+        new AdvancedMatrix();
     }
 
     return block;
   }
 
+  // No check on empty matrices because already checked in multiplyBy()
   private AMatrix[] split(AMatrix m) {
     int fullSize = _chunkSideSize * 2;
 
@@ -192,6 +198,7 @@ class AdvancedMatrix extends AMatrix {
     new SubMatrixCalculator(0, 7, A, B).run();
   }
 
+  // No check on empty matrices because empty matrices won't be split - and therefore won't have to be merged
   private AMatrix mergeMatricesBlocks(AMatrix[] C) {
     long[] resultArray = new long[_resultHeight * _resultWidth];
 
@@ -202,23 +209,41 @@ class AdvancedMatrix extends AMatrix {
           (i - (sendingMatrixId >= 2 ? _chunkSideSize : 0)) * _chunkSideSize
             + j - (sendingMatrixId == 1 || sendingMatrixId == 3 ? _chunkSideSize : 0);
 
-        resultArray[i * _resultWidth + j] = C[sendingMatrixId].getArray()[sendingMatrixIndex];
+        resultArray[i * _resultWidth + j] = !C[sendingMatrixId].isEmpty() ?
+          C[sendingMatrixId].getArray()[sendingMatrixIndex] :
+          0;
       }
     }
 
     return new AdvancedMatrix(_resultHeight, _resultWidth, resultArray);
   }
 
+  // No check on empty matrices because already checked in subtract()
+  AMatrix multiplyByInt(int nb) {
+    int sideSize = this.getHeight();
+    long[] resultArray = new long[sideSize * sideSize];
+
+    for (int i = 0; i < sideSize; ++i) {
+      for (int j = 0; j < sideSize; ++j) {
+        int index = i * sideSize + j;
+
+        resultArray[index] = this.getArray()[index] * -1;
+      }
+    }
+
+    return new AdvancedMatrix(sideSize, sideSize, resultArray);
+  }
+
+  // No check on empty matrices because already checked in multiplyBy()
   private AMatrix simpleMultiply(AMatrix m2) {
-    AMatrix m1 = this;
-    int resultSideSize = m1.getHeight();
+    int resultSideSize = this.getHeight();
     long[] resultArray = new long[resultSideSize * resultSideSize];
 
     for (int i = 0; i < resultSideSize; ++i) {
       for (int k = 0; k < resultSideSize; ++k) {
         for (int j = 0; j < resultSideSize; ++j) {
           resultArray[i * resultSideSize + j] +=
-            m1.getArray()[i * resultSideSize + k] * m2.getArray()[k * resultSideSize + j];
+            this.getArray()[i * resultSideSize + k] * m2.getArray()[k * resultSideSize + j];
         }
       }
     }
@@ -227,13 +252,12 @@ class AdvancedMatrix extends AMatrix {
   }
 
   AMatrix multiplyBy(AMatrix m2) {
-    _resultHeight = this.getHeight();
-    _resultWidth = m2.getWidth();
-
     if (this.isEmpty() || m2.isEmpty()) {
-      return new AdvancedMatrix(_resultHeight, _resultWidth, new long[_resultHeight * _resultWidth], true);
+      return new AdvancedMatrix();
     }
 
+    _resultHeight = this.getHeight();
+    _resultWidth = m2.getWidth();
     _chunkSideSize = getChunkSideSize(this.getHeight(), this.getWidth(), m2.getHeight(), m2.getWidth());
 
     int nbThreads = 7 > NB_THREADS_AVAILABLE ? NB_THREADS_AVAILABLE : 7;
@@ -241,7 +265,7 @@ class AdvancedMatrix extends AMatrix {
     AMatrix[] A = split(this);
     AMatrix[] B = split(m2);
     if (A == null || B == null) {
-      return simpleMultiply(m2);
+      return this.simpleMultiply(m2);
     }
 
     _M = new AMatrix[7];
