@@ -1,9 +1,14 @@
+import java.util.Arrays;
+
 class AdvancedMatrix extends AMatrix {
   private int SPLIT_SIZE = 4;
+  private int LEAF_SIZE = 1000;
 
   private int _resultHeight;
   private int _resultWidth;
   private int _chunkSideSize;
+
+  private AMatrix[][] _AB;
 
   private AMatrix[] _M;
 
@@ -21,6 +26,58 @@ class AdvancedMatrix extends AMatrix {
     _resultHeight = sideSize;
     _resultWidth = sideSize;
     _chunkSideSize = sideSize / 2;
+  }
+
+  class MatrixSplitter implements Runnable {
+    int _start;
+    int _end;
+    int _matrixId;
+    AMatrix _m;
+
+    MatrixSplitter(int start, int end, int matrixId, AMatrix m) {
+      _start = start;
+      _end = end;
+      _matrixId = matrixId;
+      _m = m;
+    }
+
+    private void createBlockMatrixFromSplitArrays(long[][] splitArray, boolean[] isMatrixEmpty) {
+      for (int i = 0; i < SPLIT_SIZE; ++i) {
+        _AB[_matrixId][i] = !isMatrixEmpty[i] ?
+          new AdvancedMatrix(_chunkSideSize, splitArray[i]) :
+          new AdvancedMatrix();
+      }
+    }
+
+    public void run() {
+      int fullSize = _chunkSideSize * 2;
+
+      long[][] resultArrays = new long[SPLIT_SIZE][fullSize * fullSize];
+      boolean[] isMatrixEmpty = new boolean[SPLIT_SIZE];
+      Arrays.fill(isMatrixEmpty, true);
+
+      for (int i = 0; i < fullSize; ++i) {
+        for (int j = 0; j < fullSize; ++j) {
+          int recipientMatrixId = (j >= _chunkSideSize ? 1 : 0) + (i >= _chunkSideSize ? 2 : 0);
+          int recipientMatrixIndex =
+            (i - (recipientMatrixId >= 2 ? _chunkSideSize : 0)) * _chunkSideSize
+              + j - (recipientMatrixId == 1 || recipientMatrixId == 3 ? _chunkSideSize : 0);
+
+          if (i < _m.getHeight() && j < _m.getWidth()) {
+            long value = _m.getArray()[i * _m.getWidth() + j];
+            resultArrays[recipientMatrixId][recipientMatrixIndex] = value;
+
+            if (value != 0 && isMatrixEmpty[recipientMatrixId]) {
+              isMatrixEmpty[recipientMatrixId] = false;
+            }
+          } else {
+            resultArrays[recipientMatrixId][recipientMatrixIndex] = 0;
+          }
+        }
+      }
+
+      createBlockMatrixFromSplitArrays(resultArrays, isMatrixEmpty);
+    }
   }
 
   class SubMatrixCalculator implements Runnable {
@@ -132,62 +189,61 @@ class AdvancedMatrix extends AMatrix {
     return getNextPowerOfTwo(greaterSide) / (SPLIT_SIZE / 2);
   }
 
-  private AMatrix[] createBlockMatrixFromSplitArray(long[][] splitArray, boolean[] isMatrixEmpty) {
-    AMatrix[] block = new AMatrix[SPLIT_SIZE];
-
-    for (int i = 0; i < SPLIT_SIZE; ++i) {
-      block[i] = !isMatrixEmpty[i] ?
-        new AdvancedMatrix(_chunkSideSize, splitArray[i]) :
-        new AdvancedMatrix();
-    }
-
-    return block;
-  }
-
-  // No check on empty matrices because already checked in multiplyBy()
-  private AMatrix[] split(AMatrix m) {
-    int fullSize = _chunkSideSize * 2;
-
-    if (fullSize < SPLIT_SIZE) {
-      return null;
-    }
-
-    long[][] resultArrays = new long[SPLIT_SIZE][fullSize * fullSize];
-    boolean[] isMatrixEmpty = new boolean[SPLIT_SIZE];
-    for (int i = 0; i < SPLIT_SIZE; ++i) {
-      isMatrixEmpty[i] = true;
-    }
-
-    for (int i = 0; i < fullSize; ++i) {
-      for (int j = 0; j < fullSize; ++j) {
-        int recipientMatrixId = (j >= _chunkSideSize ? 1 : 0) + (i >= _chunkSideSize ? 2 : 0);
-        int recipientMatrixIndex =
-          (i - (recipientMatrixId >= 2 ? _chunkSideSize : 0)) * _chunkSideSize
-            + j - (recipientMatrixId == 1 || recipientMatrixId == 3 ? _chunkSideSize : 0);
-
-        if (i < m.getHeight() && j < m.getWidth()) {
-          long value = m.getArray()[i * m.getWidth() + j];
-          resultArrays[recipientMatrixId][recipientMatrixIndex] = value;
-
-          if (value != 0 && isMatrixEmpty[recipientMatrixId]) {
-            isMatrixEmpty[recipientMatrixId] = false;
-          }
-        } else {
-          resultArrays[recipientMatrixId][recipientMatrixIndex] = 0;
-        }
-      }
-    }
-
-    return createBlockMatrixFromSplitArray(resultArrays, isMatrixEmpty);
-  }
-
-  private void runParallelCompute(AMatrix[] A, AMatrix[] B, int nbThreads) {
+  private void runParallelSplit(int matrixId, AMatrix m, int nbThreads, int nbWorkToDo) {
     Thread[] threads = new Thread[nbThreads];
-    int sectionSize = (7 / nbThreads) + (7 % nbThreads != 0 ? 1 : 0);
+    int sectionSize = (nbWorkToDo / nbThreads) + (nbWorkToDo % nbThreads != 0 ? 1 : 0);
 
     for (int i = 0; i < nbThreads; ++i) {
       int start = i * sectionSize;
-      int end = (i == nbThreads - 1 ? 7 : (i + 1) * sectionSize);
+      int end = (i == nbThreads - 1 ? nbWorkToDo : (i + 1) * sectionSize);
+
+      threads[i] = new Thread(new MatrixSplitter(start, end, matrixId, m));
+      threads[i].start();
+    }
+
+    try {
+      for (int i = 0; i < nbThreads; ++i) {
+        threads[i].join();
+      }
+    } catch (InterruptedException e) {
+      System.err.println("Thread supposed to compute line has been unexpectedly interrupted");
+    }
+  }
+
+  private void runSequentialSplit(int matrixId, AMatrix m, int nbWorkToDo) {
+    new MatrixSplitter(0, nbWorkToDo, matrixId, m).run();
+  }
+
+  // No check on empty matrices because already checked in multiplyBy()
+  private void splitMatrices(AMatrix m1, AMatrix m2) {
+    if (_chunkSideSize * 2 <= LEAF_SIZE) {
+      _AB = null;
+      return;
+    }
+
+    int nbWorkToDo = _chunkSideSize;
+    int nbThreads = nbWorkToDo * 2 > NB_THREADS_AVAILABLE ? NB_THREADS_AVAILABLE : nbWorkToDo * 2;
+    _AB = new AMatrix[2][SPLIT_SIZE];
+
+    if (nbThreads > 1) {
+      runParallelSplit(0, m1, nbThreads / 2 + nbThreads % 2, nbWorkToDo);
+    } else {
+      runSequentialSplit(0, m1, nbWorkToDo);
+    }
+    if (nbThreads > 2) {
+      runParallelSplit(1, m2, nbThreads / 2, nbWorkToDo);
+    } else {
+      runSequentialSplit(1, m2, nbWorkToDo);
+    }
+  }
+
+  private void runParallelCompute(AMatrix[] A, AMatrix[] B, int nbThreads, int nbWorkToDo) {
+    Thread[] threads = new Thread[nbThreads];
+    int sectionSize = (nbWorkToDo / nbThreads) + (nbWorkToDo % nbThreads != 0 ? 1 : 0);
+
+    for (int i = 0; i < nbThreads; ++i) {
+      int start = i * sectionSize;
+      int end = (i == nbThreads - 1 ? nbWorkToDo : (i + 1) * sectionSize);
 
       threads[i] = new Thread(new SubMatrixCalculator(start, end, A, B));
       threads[i].start();
@@ -202,8 +258,20 @@ class AdvancedMatrix extends AMatrix {
     }
   }
 
-  private void runSequentialCompute(AMatrix[] A, AMatrix[] B) {
-    new SubMatrixCalculator(0, 7, A, B).run();
+  private void runSequentialCompute(AMatrix[] A, AMatrix[] B, int nbWorkToDo) {
+    new SubMatrixCalculator(0, nbWorkToDo, A, B).run();
+  }
+
+  private void computeM() {
+    int nbWorkToDo = 7;
+    int nbThreads = nbWorkToDo > NB_THREADS_AVAILABLE ? NB_THREADS_AVAILABLE : nbWorkToDo;
+    _M = new AMatrix[nbWorkToDo];
+
+    if (nbThreads > 1) {
+      runParallelCompute(_AB[0], _AB[1], nbThreads, nbWorkToDo);
+    } else {
+      runSequentialCompute(_AB[0], _AB[1], nbWorkToDo);
+    }
   }
 
   // No check on empty matrices because empty matrices won't be split - and therefore won't have to be merged
@@ -281,8 +349,7 @@ class AdvancedMatrix extends AMatrix {
     Timer timer2 = new Timer();
     timer2.start();
 
-    AMatrix[] A = split(this);
-    AMatrix[] B = split(m2);
+    splitMatrices(this, m2);
 
     timer2.end();
     long time2 = timer2.getEllapsedTime();
@@ -290,20 +357,14 @@ class AdvancedMatrix extends AMatrix {
       System.out.println("Time spent splitting matrices: " + time2 + "ms");
     }
 
-    if (A == null || B == null) {
+    if (_AB == null) {
       return this.simpleMultiply(m2);
     }
 
     Timer timer3 = new Timer();
     timer3.start();
 
-    int nbThreads = 7 > NB_THREADS_AVAILABLE ? NB_THREADS_AVAILABLE : 7;
-    _M = new AMatrix[7];
-    if (nbThreads > 1) {
-      runParallelCompute(A, B, nbThreads);
-    } else {
-      runSequentialCompute(A, B);
-    }
+    computeM();
 
     timer3.end();
     long time3 = timer3.getEllapsedTime();
