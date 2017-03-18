@@ -1,4 +1,6 @@
 abstract class AMatrix {
+  int NB_THREADS_AVAILABLE = Runtime.getRuntime().availableProcessors();
+
   private int _height;
   private int _width;
   private long[] _array;
@@ -8,6 +10,8 @@ abstract class AMatrix {
     _width = width;
     _array = array;
   }
+
+  AMatrix() {}
 
   int getHeight() {
     return _height;
@@ -19,6 +23,10 @@ abstract class AMatrix {
 
   long[] getArray() {
     return _array;
+  }
+
+  boolean isEmpty() {
+    return _array == null;
   }
 
   void prettyPrint() {
@@ -75,4 +83,12 @@ abstract class AMatrix {
   abstract AMatrix add(AMatrix m2);
   abstract AMatrix subtract(AMatrix m2);
   abstract AMatrix multiplyBy(AMatrix m2);
+
+  AMatrix multiplyBy(AMatrix m2, boolean doMultiThread) {
+    if (!doMultiThread) {
+      NB_THREADS_AVAILABLE = 0;
+    }
+
+    return this.multiplyBy(m2);
+  }
 }
