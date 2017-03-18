@@ -353,19 +353,11 @@ class AdvancedMatrix extends AMatrix {
     if (this.isEmpty() || m2.isEmpty()) {
       return new AdvancedMatrix();
     }
-    Timer timer1 = new Timer();
-    timer1.start();
 
     if (_chunkSideSize == 0) {
       _resultHeight = this.getHeight();
       _resultWidth = m2.getWidth();
       _chunkSideSize = getChunkSideSize(this.getHeight(), this.getWidth(), m2.getHeight(), m2.getWidth());
-    }
-
-    timer1.end();
-    long time1 = timer1.getEllapsedTime();
-    if (time1 != 0) {
-      System.out.println("Time spent initializing vars: " + time1 + "ms");
     }
 
     Timer timer2 = new Timer();
