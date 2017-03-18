@@ -13,6 +13,7 @@ class AdvancedMatrix extends AMatrix {
   private AMatrix[][] _AB;
 
   private AMatrix[] _M;
+  private AMatrix[] _C;
 
   private AdvancedMatrix() {
     super();
@@ -104,6 +105,40 @@ class AdvancedMatrix extends AMatrix {
         default:
       }
     }
+
+    public void run() {
+      for(int i = _start; i < _end; ++i) {
+        compute(i);
+      }
+    }
+  }
+
+    class FinalSubMatrixCalculator implements Runnable {
+      int _start;
+      int _end;
+
+      FinalSubMatrixCalculator(int start, int end) {
+        _start = start;
+        _end = end;
+      }
+
+      private void compute(int index) {
+        switch (index) {
+          case 0:
+            _C[0] = _M[0].add(_M[3]).subtract(_M[4]).add(_M[6]);
+            break;
+          case 1:
+            _C[1] = _M[2].add(_M[4]);
+            break;
+          case 2:
+            _C[2] = _M[1].add(_M[3]);
+            break;
+          case 3:
+            _C[3] = _M[0].subtract(_M[1]).add(_M[2]).add(_M[5]);
+            break;
+          default:
+        }
+      }
 
     public void run() {
       for(int i = _start; i < _end; ++i) {
@@ -239,7 +274,7 @@ class AdvancedMatrix extends AMatrix {
     createBlockMatricesFromSplitArrays();
   }
 
-  private void runParallelCompute(int nbThreads, int nbWorkToDo) {
+  private void runParallelComputeM(int nbThreads, int nbWorkToDo) {
     Thread[] threads = new Thread[nbThreads];
     int sectionSize = (nbWorkToDo / nbThreads) + (nbWorkToDo % nbThreads != 0 ? 1 : 0);
 
@@ -260,7 +295,7 @@ class AdvancedMatrix extends AMatrix {
     }
   }
 
-  private void runSequentialCompute(int nbWorkToDo) {
+  private void runSequentialComputeM(int nbWorkToDo) {
     new SubMatrixCalculator(0, nbWorkToDo).run();
   }
 
@@ -270,14 +305,51 @@ class AdvancedMatrix extends AMatrix {
     _M = new AMatrix[nbWorkToDo];
 
     if (nbThreads > 1) {
-      runParallelCompute(nbThreads, nbWorkToDo);
+      runParallelComputeM(nbThreads, nbWorkToDo);
     } else {
-      runSequentialCompute(nbWorkToDo);
+      runSequentialComputeM(nbWorkToDo);
+    }
+  }
+
+  private void runParallelComputeC(int nbThreads, int nbWorkToDo) {
+    Thread[] threads = new Thread[nbThreads];
+    int sectionSize = (nbWorkToDo / nbThreads) + (nbWorkToDo % nbThreads != 0 ? 1 : 0);
+
+    for (int i = 0; i < nbThreads; ++i) {
+      int start = i * sectionSize;
+      int end = (i == nbThreads - 1 ? nbWorkToDo : (i + 1) * sectionSize);
+
+      threads[i] = new Thread(new FinalSubMatrixCalculator(start, end));
+      threads[i].start();
+    }
+
+    try {
+      for (int i = 0; i < nbThreads; ++i) {
+        threads[i].join();
+      }
+    } catch (InterruptedException e) {
+      System.err.println("Thread supposed to compute line has been unexpectedly interrupted");
+    }
+  }
+
+  private void runSequentialComputeC(int nbWorkToDo) {
+    new FinalSubMatrixCalculator(0, nbWorkToDo).run();
+  }
+
+  private void computeC() {
+    int nbWorkToDo = 4;
+    int nbThreads = nbWorkToDo > NB_THREADS_AVAILABLE ? NB_THREADS_AVAILABLE : nbWorkToDo;
+    _C = new AMatrix[nbWorkToDo];
+
+    if (nbThreads > 1) {
+      runParallelComputeC(nbThreads, nbWorkToDo);
+    } else {
+      runSequentialComputeC(nbWorkToDo);
     }
   }
 
   // No check on empty matrices because empty matrices won't be split - and therefore won't have to be merged
-  private AMatrix mergeMatricesBlocks(AMatrix[] C) {
+  private AMatrix mergeMatricesBlocks() {
     long[] resultArray = new long[_resultHeight * _resultWidth];
 
     for (int i = 0; i < _resultHeight; ++i) {
@@ -287,8 +359,8 @@ class AdvancedMatrix extends AMatrix {
           (i - (sendingMatrixId >= 2 ? _chunkSideSize : 0)) * _chunkSideSize
             + j - (sendingMatrixId == 1 || sendingMatrixId == 3 ? _chunkSideSize : 0);
 
-        resultArray[i * _resultWidth + j] = !C[sendingMatrixId].isEmpty() ?
-          C[sendingMatrixId].getArray()[sendingMatrixIndex] :
+        resultArray[i * _resultWidth + j] = !_C[sendingMatrixId].isEmpty() ?
+          _C[sendingMatrixId].getArray()[sendingMatrixIndex] :
           0;
       }
     }
@@ -373,7 +445,7 @@ class AdvancedMatrix extends AMatrix {
     timer2.end();
     long time2 = timer2.getEllapsedTime();
     if (time2 != 0 && NB_THREADS_AVAILABLE != 0) {
-      System.out.println("Time spent splitting matrices: " + time2 + "ms");
+      //System.out.println("Time spent splitting matrices: " + time2 + "ms");
     }
 
     if (_AB == null) {
@@ -390,27 +462,13 @@ class AdvancedMatrix extends AMatrix {
     if (time3 != 0) {
       //System.out.println("Time spent computing M: " + time3 + "ms");
     }
-
-    Timer timer4 = new Timer();
-    timer4.start();
-
-    AMatrix[] C = new AMatrix[]{
-      _M[0].add(_M[3]).subtract(_M[4]).add(_M[6]),
-      _M[2].add(_M[4]),
-      _M[1].add(_M[3]),
-      _M[0].subtract(_M[1]).add(_M[2]).add(_M[5]),
-    };
-
-    timer4.end();
-    long time4 = timer4.getEllapsedTime();
-    if (time4 != 0) {
-      //System.out.println("Time spent computing C: " + time4 + "ms");
-    }
+    
+    computeC();
 
     Timer timer5 = new Timer();
     timer5.start();
 
-    AMatrix result = mergeMatricesBlocks(C);
+    AMatrix result = mergeMatricesBlocks();
 
     timer5.end();
     long time5 = timer5.getEllapsedTime();
