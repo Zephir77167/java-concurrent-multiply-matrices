@@ -372,8 +372,8 @@ class AdvancedMatrix extends AMatrix {
 
     timer2.end();
     long time2 = timer2.getEllapsedTime();
-    if (time2 != 0) {
-      //System.out.println("Time spent splitting matrices: " + time2 + "ms");
+    if (time2 != 0 && NB_THREADS_AVAILABLE != 0) {
+      System.out.println("Time spent splitting matrices: " + time2 + "ms");
     }
 
     if (_AB == null) {
