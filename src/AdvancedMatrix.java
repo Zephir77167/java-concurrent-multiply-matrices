@@ -50,28 +50,29 @@ class AdvancedMatrix extends AMatrix {
     }
 
     public void run() {
-      int fullSize = _chunkSideSize * 2;
-
       long[][] resultArrays = new long[SPLIT_SIZE][_chunkSideSize * _chunkSideSize];
       boolean[] isMatrixEmpty = new boolean[SPLIT_SIZE];
       Arrays.fill(isMatrixEmpty, true);
 
-      for (int i = 0; i < fullSize; ++i) {
-        for (int j = 0; j < fullSize; ++j) {
-          int recipientMatrixId = (j >= _chunkSideSize ? 1 : 0) + (i >= _chunkSideSize ? 2 : 0);
-          int recipientMatrixIndex =
-            (i - (recipientMatrixId >= 2 ? _chunkSideSize : 0)) * _chunkSideSize
-              + j - (recipientMatrixId == 1 || recipientMatrixId == 3 ? _chunkSideSize : 0);
+      for (int i = 0; i < _chunkSideSize; ++i) {
+        for (int j = 0; j < _chunkSideSize; ++j) {
+          int recipientIdx = i * _chunkSideSize + j;
 
-          if (i < _m.getHeight() && j < _m.getWidth()) {
-            long value = _m.getArray()[i * _m.getWidth() + j];
-            resultArrays[recipientMatrixId][recipientMatrixIndex] = value;
+          for (int k = 0; k < SPLIT_SIZE; ++k) {
+            int newI = i + (k / 2 * _chunkSideSize);
+            int newJ = k != 0 && k != 2 ? j + _chunkSideSize : j;
 
-            if (value != 0 && isMatrixEmpty[recipientMatrixId]) {
-              isMatrixEmpty[recipientMatrixId] = false;
+            if (newI < _m.getHeight() && newJ < _m.getWidth()) {
+              long value = _m.getArray()[newI * _m.getWidth() + newJ];
+
+              resultArrays[k][recipientIdx] = value;
+
+              if (value != 0 && isMatrixEmpty[k]) {
+                isMatrixEmpty[k] = false;
+              }
+            } else {
+              resultArrays[k][recipientIdx] = 0;
             }
-          } else {
-            resultArrays[recipientMatrixId][recipientMatrixIndex] = 0;
           }
         }
       }
@@ -90,16 +91,6 @@ class AdvancedMatrix extends AMatrix {
     }
 
     private void compute(int index) {
-      if (_AB == null) {
-        System.out.println("?");
-      } else if (_AB[0] == null || _AB[1] == null) {
-        System.out.println("??");
-      } else if (_AB[0][0] == null || _AB[0][1] == null || _AB[0][2] == null || _AB[0][3] == null) {
-        System.out.println("A???");
-      } else if (_AB[1][0] == null || _AB[1][1] == null || _AB[1][2] == null || _AB[1][3] == null) {
-        System.out.println("B???");
-      }
-
       switch (index) {
         case 0:
           _M[0] = (_AB[0][0].add(_AB[0][3])).multiplyBy(_AB[1][0].add(_AB[1][3]), false);
