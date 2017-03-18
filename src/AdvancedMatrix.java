@@ -219,7 +219,7 @@ class AdvancedMatrix extends AMatrix {
   }
 
   // No check on empty matrices because already checked in subtract()
-  AMatrix multiplyByInt(int nb) {
+  private AMatrix multiplyByInt(int nb) {
     int sideSize = this.getHeight();
     long[] resultArray = new long[sideSize * sideSize];
 
@@ -227,7 +227,7 @@ class AdvancedMatrix extends AMatrix {
       for (int j = 0; j < sideSize; ++j) {
         int index = i * sideSize + j;
 
-        resultArray[index] = this.getArray()[index] * -1;
+        resultArray[index] = this.getArray()[index] * nb;
       }
     }
 
