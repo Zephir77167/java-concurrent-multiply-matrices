@@ -233,7 +233,7 @@ class AdvancedMatrix extends AMatrix {
     }
   }
 
-  private void runParallelCompute(AMatrix[] A, AMatrix[] B, int nbThreads, int nbWorkToDo) {
+  private void runParallelCompute(int nbThreads, int nbWorkToDo) {
     Thread[] threads = new Thread[nbThreads];
     int sectionSize = (nbWorkToDo / nbThreads) + (nbWorkToDo % nbThreads != 0 ? 1 : 0);
 
@@ -254,7 +254,7 @@ class AdvancedMatrix extends AMatrix {
     }
   }
 
-  private void runSequentialCompute(AMatrix[] A, AMatrix[] B, int nbWorkToDo) {
+  private void runSequentialCompute(int nbWorkToDo) {
     new SubMatrixCalculator(0, nbWorkToDo).run();
   }
 
@@ -264,9 +264,9 @@ class AdvancedMatrix extends AMatrix {
     _M = new AMatrix[nbWorkToDo];
 
     if (nbThreads > 1) {
-      runParallelCompute(_AB[0], _AB[1], nbThreads, nbWorkToDo);
+      runParallelCompute(nbThreads, nbWorkToDo);
     } else {
-      runSequentialCompute(_AB[0], _AB[1], nbWorkToDo);
+      runSequentialCompute(nbWorkToDo);
     }
   }
 
@@ -364,7 +364,7 @@ class AdvancedMatrix extends AMatrix {
     timer1.end();
     long time1 = timer1.getEllapsedTime();
     if (time1 != 0) {
-      //System.out.println("Time spent initializing vars: " + time1 + "ms");
+      System.out.println("Time spent initializing vars: " + time1 + "ms");
     }
 
     Timer timer2 = new Timer();
@@ -375,7 +375,7 @@ class AdvancedMatrix extends AMatrix {
     timer2.end();
     long time2 = timer2.getEllapsedTime();
     if (time2 != 0) {
-      System.out.println("Time spent splitting matrices: " + time2 + "ms");
+      //System.out.println("Time spent splitting matrices: " + time2 + "ms");
     }
 
     if (_AB == null) {
