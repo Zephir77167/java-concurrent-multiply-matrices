@@ -23,7 +23,7 @@ class SimpleMatrix extends AMatrix {
         for (int k = 0; k < _m1.getWidth(); ++k) {
           for (int j = 0; j < _resultWidth; ++j) {
             _resultArray[i * _resultWidth + j] +=
-              _m1.getArray()[i * _m1.getWidth() + k] * _m2.getArray()[k * _m2.getWidth() + j];
+              _m1.getArray()[i * _m1.getWidth() + k] * _m2.getArray()[k * _resultWidth + j];
           }
         }
       }

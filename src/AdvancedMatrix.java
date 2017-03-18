@@ -2,7 +2,7 @@ import java.util.Arrays;
 
 class AdvancedMatrix extends AMatrix {
   private int SPLIT_SIZE = 4;
-  private int LEAF_SIZE = 1000;
+  private int LEAF_SIZE = 512;
 
   private int _resultHeight;
   private int _resultWidth;
@@ -83,38 +83,34 @@ class AdvancedMatrix extends AMatrix {
   class SubMatrixCalculator implements Runnable {
     int _start;
     int _end;
-    AMatrix[] _A;
-    AMatrix[] _B;
 
-    SubMatrixCalculator(int start, int end, AMatrix[] A, AMatrix[] B) {
+    SubMatrixCalculator(int start, int end) {
       _start = start;
       _end = end;
-      _A = A;
-      _B = B;
     }
 
     private void compute(int index) {
       switch (index) {
         case 0:
-          _M[0] = (_A[0].add(_A[3])).multiplyBy(_B[0].add(_B[3]), false);
+          _M[0] = (_AB[0][0].add(_AB[0][3])).multiplyBy(_AB[1][0].add(_AB[1][3]), false);
           break;
         case 1:
-          _M[1] = (_A[2].add(_A[3])).multiplyBy(_B[0], false);
+          _M[1] = (_AB[0][2].add(_AB[0][3])).multiplyBy(_AB[1][0], false);
           break;
         case 2:
-          _M[2] = _A[0].multiplyBy(_B[1].subtract(_B[3]), false);
+          _M[2] = _AB[0][0].multiplyBy(_AB[1][1].subtract(_AB[1][3]), false);
           break;
         case 3:
-          _M[3] = _A[3].multiplyBy(_B[2].subtract(_B[0]), false);
+          _M[3] = _AB[0][3].multiplyBy(_AB[1][2].subtract(_AB[1][0]), false);
           break;
         case 4:
-          _M[4] = (_A[0].add(_A[1])).multiplyBy(_B[3], false);
+          _M[4] = (_AB[0][0].add(_AB[0][1])).multiplyBy(_AB[1][3], false);
           break;
         case 5:
-          _M[5] = (_A[2].subtract(_A[0])).multiplyBy(_B[0].add(_B[1]), false);
+          _M[5] = (_AB[0][2].subtract(_AB[0][0])).multiplyBy(_AB[1][0].add(_AB[1][1]), false);
           break;
         case 6:
-          _M[6] = (_A[1].subtract(_A[3])).multiplyBy(_B[2].add(_B[3]), false);
+          _M[6] = (_AB[0][1].subtract(_AB[0][3])).multiplyBy(_AB[1][2].add(_AB[1][3]), false);
           break;
         default:
       }
@@ -245,7 +241,7 @@ class AdvancedMatrix extends AMatrix {
       int start = i * sectionSize;
       int end = (i == nbThreads - 1 ? nbWorkToDo : (i + 1) * sectionSize);
 
-      threads[i] = new Thread(new SubMatrixCalculator(start, end, A, B));
+      threads[i] = new Thread(new SubMatrixCalculator(start, end));
       threads[i].start();
     }
 
@@ -259,7 +255,7 @@ class AdvancedMatrix extends AMatrix {
   }
 
   private void runSequentialCompute(AMatrix[] A, AMatrix[] B, int nbWorkToDo) {
-    new SubMatrixCalculator(0, nbWorkToDo, A, B).run();
+    new SubMatrixCalculator(0, nbWorkToDo).run();
   }
 
   private void computeM() {
@@ -310,8 +306,7 @@ class AdvancedMatrix extends AMatrix {
     return new AdvancedMatrix(sideSize, resultArray);
   }
 
-  // No check on empty matrices because already checked in multiplyBy()
-  private AMatrix simpleMultiply(AMatrix m2) {
+  private AMatrix simpleSquareMultiply(AMatrix m2) {
     int resultSideSize = this.getHeight();
     long[] resultArray = new long[resultSideSize * resultSideSize];
 
@@ -325,6 +320,32 @@ class AdvancedMatrix extends AMatrix {
     }
 
     return new AdvancedMatrix(resultSideSize, resultArray);
+  }
+
+  private AMatrix simpleNotSquareMultiply(AMatrix m2) {
+    int resultHeight = this.getHeight();
+    int resultWidth = m2.getWidth();
+    long[] resultArray = new long[resultHeight * resultWidth];
+
+    for (int i = 0; i < resultHeight; ++i) {
+      for (int k = 0; k < resultWidth; ++k) {
+        for (int j = 0; j < resultWidth; ++j) {
+          resultArray[i * resultWidth + j] +=
+            this.getArray()[i * this.getWidth() + k] * m2.getArray()[k * resultWidth + j];
+        }
+      }
+    }
+
+    return new AdvancedMatrix(resultHeight, resultWidth, resultArray);
+  }
+
+  // No check on empty matrices because already checked in multiplyBy()
+  private AMatrix simpleMultiply(AMatrix m2) {
+    if (this.getHeight() == this.getWidth()) {
+      return this.simpleSquareMultiply(m2);
+    }
+
+    return this.simpleNotSquareMultiply(m2);
   }
 
   AMatrix multiplyBy(AMatrix m2) {
