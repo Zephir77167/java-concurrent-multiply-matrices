@@ -4,7 +4,7 @@
 
 <h2>Description</h2>
 
-This program computes the product of 2 matrices, using two different algorithms (SimpleMatrixMultiply and AdvancedMatrixMultiply).
+This program computes the product of 2 matrices, using two different algorithms (SimpleMatrixMultiply, a naïve algorithm, and AdvancedMatrixMultiply, implementing the [Strassen algorithm](https://en.wikipedia.org/wiki/Strassen_algorithm)).
 
 It takes the path to a JSON file containing 5 properties:
  - `height1` (height of the first matrix),
@@ -21,15 +21,17 @@ It takes the path to a JSON file containing 5 properties:
 ```
 javac -cp "src;libs/*" -d "out" src/*.java
 java -cp "out;libs/*" SimpleMatrixMultiply resources/matrices-2000-3000-3000-2000.json
-java -cp "out;libs/*" AdvancedMatrixMultiply resources/matrices-2000-3000-3000-2000.json
+java -Xmx8192m -cp "out;libs/*" AdvancedMatrixMultiply resources/matrices-2000-3000-3000-2000.json
 ```
 
 - Linux
 ```
 javac -cp "src:libs/*" -d "out" src/*.java
 java -cp "out:libs/*" SimpleMatrixMultiply resources/matrices-2000-3000-3000-2000.json
-java -cp "out:libs/*" AdvancedMatrixMultiply resources/matrices-2000-3000-3000-2000.json
+java -Xmx8192m -cp "out:libs/*" AdvancedMatrixMultiply resources/matrices-2000-3000-3000-2000.json
 ```
+
+Note on AdvancedMatrixMultiply: computing matrices with a side size of more than 4096 requires more than 8Go of RAM, in order not to exceed the JVM heap size.
 
 <hr />
 
@@ -41,7 +43,7 @@ List of files to test on (in resources/):
 - matrices-2000-3000-3000-2000.json
 - matrices-3001-2001-2001-3001.json
 - matrices-4000-4000-4000-4000.json
-- matrices-5000-7500-7500-10000.json
+- matrices-4096-4095-4095-4096.json
 
 Running the program with `-v` displays the 2 generated matrices and the 2 results `m1 * m2` and `m2 * m1`
 
