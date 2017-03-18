@@ -24,16 +24,18 @@ It takes the path to a JSON file containing 5 properties:
 - Windows
 ```
 javac -cp "src;libs/*" -d "out" src/*.java
-java -cp "out;libs/*" SimpleMatrixMultiply resources/matrices-2000-3000-3000-2000.json
-java -Xmx8192m -cp "out;libs/*" AdvancedMatrixMultiply resources/matrices-2000-3000-3000-2000.json
+java -Xmx8192m  -cp "out;libs/*" SimpleMatrixMultiply resources/matrices-4096-4095-4095-4096.json
+java -Xmx8192m -cp "out;libs/*" AdvancedMatrixMultiply resources/matrices-4096-4095-4095-4096.json
 ```
 
 - Linux
 ```
 javac -cp "src:libs/*" -d "out" src/*.java
-java -cp "out:libs/*" SimpleMatrixMultiply resources/matrices-2000-3000-3000-2000.json
-java -Xmx8192m -cp "out:libs/*" AdvancedMatrixMultiply resources/matrices-2000-3000-3000-2000.json
+java -Xmx8192m  -cp "out:libs/*" SimpleMatrixMultiply resources/matrices-4096-4095-4095-4096.json
+java -Xmx8192m -cp "out:libs/*" AdvancedMatrixMultiply resources/matrices-4096-4095-4095-4096.json
 ```
+
+Note: all tests have been done using `-Xmx8192m`, giving the JVM 8Go of heap size.
 
 Note on AdvancedMatrixMultiply: computing matrices with a side size of more than 4096 requires more than 8Go of RAM, in order not to exceed the JVM heap size.
 
