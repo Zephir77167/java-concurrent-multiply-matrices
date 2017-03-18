@@ -2,6 +2,10 @@
 
 - Java JDK 1.8
 
+<h2>Dependencies:</h2>
+
+- [JSON-Java](https://github.com/stleary/JSON-java)
+
 <h2>Description</h2>
 
 This program computes the product of 2 matrices, using two different algorithms (SimpleMatrixMultiply, a naïve algorithm, and AdvancedMatrixMultiply, implementing the [Strassen algorithm](https://en.wikipedia.org/wiki/Strassen_algorithm)).
