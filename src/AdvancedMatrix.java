@@ -313,7 +313,7 @@ class AdvancedMatrix extends AMatrix {
     timer1.end();
     long time1 = timer1.getEllapsedTime();
     if (time1 != 0) {
-      //System.out.println("Time spent initializing vars: " + time1 + "ms");
+      System.out.println("Time spent initializing vars: " + time1 + "ms");
     }
 
     Timer timer2 = new Timer();
@@ -325,7 +325,7 @@ class AdvancedMatrix extends AMatrix {
     timer2.end();
     long time2 = timer2.getEllapsedTime();
     if (time2 != 0) {
-      System.out.println("Time spent splitting matrices: " + time2 + "ms");
+      //System.out.println("Time spent splitting matrices: " + time2 + "ms");
     }
 
     if (A == null || B == null) {
