@@ -90,6 +90,16 @@ class AdvancedMatrix extends AMatrix {
     }
 
     private void compute(int index) {
+      if (_AB == null) {
+        System.out.println("?");
+      } else if (_AB[0] == null || _AB[1] == null) {
+        System.out.println("??");
+      } else if (_AB[0][0] == null || _AB[0][1] == null || _AB[0][2] == null || _AB[0][3] == null) {
+        System.out.println("A???");
+      } else if (_AB[1][0] == null || _AB[1][1] == null || _AB[1][2] == null || _AB[1][3] == null) {
+        System.out.println("B???");
+      }
+
       switch (index) {
         case 0:
           _M[0] = (_AB[0][0].add(_AB[0][3])).multiplyBy(_AB[1][0].add(_AB[1][3]), false);
