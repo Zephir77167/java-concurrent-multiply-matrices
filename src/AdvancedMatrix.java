@@ -7,12 +7,20 @@ class AdvancedMatrix extends AMatrix {
 
   private AMatrix[] _M;
 
+  private AdvancedMatrix() {
+    super();
+  }
+
   AdvancedMatrix(int height, int width, long[] array) {
     super(height, width, array);
   }
 
-  private AdvancedMatrix() {
-    super();
+  AdvancedMatrix(int sideSize, long[] array) {
+    super(sideSize, sideSize, array);
+
+    _resultHeight = sideSize;
+    _resultWidth = sideSize;
+    _chunkSideSize = sideSize / 2;
   }
 
   class SubMatrixCalculator implements Runnable {
@@ -81,7 +89,7 @@ class AdvancedMatrix extends AMatrix {
       }
     }
 
-    return new AdvancedMatrix(sideSize, sideSize, resultArray);
+    return new AdvancedMatrix(sideSize, resultArray);
   }
 
   AMatrix subtract(AMatrix m2) {
@@ -103,7 +111,7 @@ class AdvancedMatrix extends AMatrix {
       }
     }
 
-    return new AdvancedMatrix(sideSize, sideSize, resultArray);
+    return new AdvancedMatrix(sideSize, resultArray);
   }
 
   private static int getNextPowerOfTwo(int nb) {
@@ -129,7 +137,7 @@ class AdvancedMatrix extends AMatrix {
 
     for (int i = 0; i < SPLIT_SIZE; ++i) {
       block[i] = !isMatrixEmpty[i] ?
-        new AdvancedMatrix(_chunkSideSize, _chunkSideSize, splitArray[i]) :
+        new AdvancedMatrix(_chunkSideSize, splitArray[i]) :
         new AdvancedMatrix();
     }
 
@@ -231,7 +239,7 @@ class AdvancedMatrix extends AMatrix {
       }
     }
 
-    return new AdvancedMatrix(sideSize, sideSize, resultArray);
+    return new AdvancedMatrix(sideSize, resultArray);
   }
 
   // No check on empty matrices because already checked in multiplyBy()
@@ -248,23 +256,46 @@ class AdvancedMatrix extends AMatrix {
       }
     }
 
-    return new AdvancedMatrix(resultSideSize, resultSideSize, resultArray);
+    return new AdvancedMatrix(resultSideSize, resultArray);
   }
 
   AMatrix multiplyBy(AMatrix m2) {
     if (this.isEmpty() || m2.isEmpty()) {
       return new AdvancedMatrix();
     }
+    Timer timer1 = new Timer();
+    timer1.start();
 
-    _resultHeight = this.getHeight();
-    _resultWidth = m2.getWidth();
-    _chunkSideSize = getChunkSideSize(this.getHeight(), this.getWidth(), m2.getHeight(), m2.getWidth());
+    if (_chunkSideSize == 0) {
+      _resultHeight = this.getHeight();
+      _resultWidth = m2.getWidth();
+      _chunkSideSize = getChunkSideSize(this.getHeight(), this.getWidth(), m2.getHeight(), m2.getWidth());
+    }
+
+    timer1.end();
+    long time1 = timer1.getEllapsedTime();
+    if (time1 != 0) {
+      //System.out.println("Time spent initializing vars: " + time1 + "ms");
+    }
+
+    Timer timer2 = new Timer();
+    timer2.start();
 
     AMatrix[] A = split(this);
     AMatrix[] B = split(m2);
+
+    timer2.end();
+    long time2 = timer2.getEllapsedTime();
+    if (time2 != 0) {
+      System.out.println("Time spent splitting matrices: " + time2 + "ms");
+    }
+
     if (A == null || B == null) {
       return this.simpleMultiply(m2);
     }
+
+    Timer timer3 = new Timer();
+    timer3.start();
 
     int nbThreads = 7 > NB_THREADS_AVAILABLE ? NB_THREADS_AVAILABLE : 7;
     _M = new AMatrix[7];
@@ -274,6 +305,15 @@ class AdvancedMatrix extends AMatrix {
       runSequentialCompute(A, B);
     }
 
+    timer3.end();
+    long time3 = timer3.getEllapsedTime();
+    if (time3 != 0) {
+      //System.out.println("Time spent computing M: " + time3 + "ms");
+    }
+
+    Timer timer4 = new Timer();
+    timer4.start();
+
     AMatrix[] C = new AMatrix[]{
       _M[0].add(_M[3]).subtract(_M[4]).add(_M[6]),
       _M[2].add(_M[4]),
@@ -281,6 +321,23 @@ class AdvancedMatrix extends AMatrix {
       _M[0].subtract(_M[1]).add(_M[2]).add(_M[5]),
     };
 
-    return mergeMatricesBlocks(C);
+    timer4.end();
+    long time4 = timer4.getEllapsedTime();
+    if (time4 != 0) {
+      //System.out.println("Time spent computing C: " + time4 + "ms");
+    }
+
+    Timer timer5 = new Timer();
+    timer5.start();
+
+    AMatrix result = mergeMatricesBlocks(C);
+
+    timer5.end();
+    long time5 = timer5.getEllapsedTime();
+    if (time5 != 0) {
+      //System.out.println("Time spent merging matrices: " + time5 + "ms");
+    }
+
+    return result;
   }
 }
