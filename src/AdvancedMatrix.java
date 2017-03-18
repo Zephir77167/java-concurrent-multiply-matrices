@@ -462,7 +462,7 @@ class AdvancedMatrix extends AMatrix {
     if (time3 != 0) {
       //System.out.println("Time spent computing M: " + time3 + "ms");
     }
-    
+
     computeC();
 
     Timer timer5 = new Timer();
