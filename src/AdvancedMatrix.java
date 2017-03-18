@@ -2,7 +2,7 @@ import java.util.Arrays;
 
 class AdvancedMatrix extends AMatrix {
   private int SPLIT_SIZE = 4;
-  private int LEAF_SIZE = 512;
+  private int LEAF_SIZE = 256;
 
   private int _resultHeight;
   private int _resultWidth;
