@@ -52,7 +52,7 @@ class AdvancedMatrix extends AMatrix {
     public void run() {
       int fullSize = _chunkSideSize * 2;
 
-      long[][] resultArrays = new long[SPLIT_SIZE][fullSize * fullSize];
+      long[][] resultArrays = new long[SPLIT_SIZE][_chunkSideSize * _chunkSideSize];
       boolean[] isMatrixEmpty = new boolean[SPLIT_SIZE];
       Arrays.fill(isMatrixEmpty, true);
 
