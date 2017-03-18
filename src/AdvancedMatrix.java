@@ -15,7 +15,7 @@ class AdvancedMatrix extends AMatrix {
     super(height, width, array);
   }
 
-  AdvancedMatrix(int sideSize, long[] array) {
+  private AdvancedMatrix(int sideSize, long[] array) {
     super(sideSize, sideSize, array);
 
     _resultHeight = sideSize;
