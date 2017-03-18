@@ -1,3 +1,5 @@
+import java.util.Arrays;
+
 class AdvancedMatrix extends AMatrix {
   private int SPLIT_SIZE = 4;
   private int LEAF_SIZE = 1000;
@@ -155,9 +157,7 @@ class AdvancedMatrix extends AMatrix {
 
     long[][] resultArrays = new long[SPLIT_SIZE][fullSize * fullSize];
     boolean[] isMatrixEmpty = new boolean[SPLIT_SIZE];
-    for (int i = 0; i < SPLIT_SIZE; ++i) {
-      isMatrixEmpty[i] = true;
-    }
+    Arrays.fill(isMatrixEmpty, true);
 
     for (int i = 0; i < fullSize; ++i) {
       for (int j = 0; j < fullSize; ++j) {
@@ -182,13 +182,13 @@ class AdvancedMatrix extends AMatrix {
     return createBlockMatrixFromSplitArray(resultArrays, isMatrixEmpty);
   }
 
-  private void runParallelCompute(AMatrix[] A, AMatrix[] B, int nbThreads) {
+  private void runParallelCompute(AMatrix[] A, AMatrix[] B, int nbThreads, int nbWorkToDo) {
     Thread[] threads = new Thread[nbThreads];
-    int sectionSize = (7 / nbThreads) + (7 % nbThreads != 0 ? 1 : 0);
+    int sectionSize = (nbWorkToDo / nbThreads) + (nbWorkToDo % nbThreads != 0 ? 1 : 0);
 
     for (int i = 0; i < nbThreads; ++i) {
       int start = i * sectionSize;
-      int end = (i == nbThreads - 1 ? 7 : (i + 1) * sectionSize);
+      int end = (i == nbThreads - 1 ? nbWorkToDo : (i + 1) * sectionSize);
 
       threads[i] = new Thread(new SubMatrixCalculator(start, end, A, B));
       threads[i].start();
@@ -203,8 +203,20 @@ class AdvancedMatrix extends AMatrix {
     }
   }
 
-  private void runSequentialCompute(AMatrix[] A, AMatrix[] B) {
-    new SubMatrixCalculator(0, 7, A, B).run();
+  private void runSequentialCompute(AMatrix[] A, AMatrix[] B, int nbWorkToDo) {
+    new SubMatrixCalculator(0, nbWorkToDo, A, B).run();
+  }
+
+  private void computeM(AMatrix[] A, AMatrix[] B) {
+    int nbWorkToDo = 7;
+    int nbThreads = nbWorkToDo > NB_THREADS_AVAILABLE ? NB_THREADS_AVAILABLE : nbWorkToDo;
+    _M = new AMatrix[nbWorkToDo];
+
+    if (nbThreads > 1) {
+      runParallelCompute(A, B, nbThreads, nbWorkToDo);
+    } else {
+      runSequentialCompute(A, B, nbWorkToDo);
+    }
   }
 
   // No check on empty matrices because empty matrices won't be split - and therefore won't have to be merged
@@ -243,8 +255,7 @@ class AdvancedMatrix extends AMatrix {
     return new AdvancedMatrix(sideSize, resultArray);
   }
 
-  // No check on empty matrices because already checked in multiplyBy()
-  private AMatrix simpleMultiply(AMatrix m2) {
+  private AMatrix simpleSquareMultiply(AMatrix m2) {
     int resultSideSize = this.getHeight();
     long[] resultArray = new long[resultSideSize * resultSideSize];
 
@@ -258,6 +269,32 @@ class AdvancedMatrix extends AMatrix {
     }
 
     return new AdvancedMatrix(resultSideSize, resultArray);
+  }
+
+  private AMatrix simpleNotSquareMultiply(AMatrix m2) {
+    int resultHeight = this.getHeight();
+    int resultWidth = m2.getWidth();
+    long[] resultArray = new long[resultHeight * resultWidth];
+
+    for (int i = 0; i < resultHeight; ++i) {
+      for (int k = 0; k < resultWidth; ++k) {
+        for (int j = 0; j < resultWidth; ++j) {
+          resultArray[i * resultWidth + j] +=
+            this.getArray()[i * this.getWidth() + k] * m2.getArray()[k * resultWidth + j];
+        }
+      }
+    }
+
+    return new AdvancedMatrix(resultHeight, resultWidth, resultArray);
+  }
+
+  // No check on empty matrices because already checked in multiplyBy()
+  private AMatrix simpleMultiply(AMatrix m2) {
+    if (this.getHeight() == this.getWidth()) {
+      return this.simpleSquareMultiply(m2);
+    }
+
+    return this.simpleNotSquareMultiply(m2);
   }
 
   AMatrix multiplyBy(AMatrix m2) {
@@ -298,13 +335,7 @@ class AdvancedMatrix extends AMatrix {
     Timer timer3 = new Timer();
     timer3.start();
 
-    int nbThreads = 7 > NB_THREADS_AVAILABLE ? NB_THREADS_AVAILABLE : 7;
-    _M = new AMatrix[7];
-    if (nbThreads > 1) {
-      runParallelCompute(A, B, nbThreads);
-    } else {
-      runSequentialCompute(A, B);
-    }
+    computeM(A, B);
 
     timer3.end();
     long time3 = timer3.getEllapsedTime();
