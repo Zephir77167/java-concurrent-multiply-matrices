@@ -2,7 +2,7 @@ import java.util.Arrays;
 
 class AdvancedMatrix extends AMatrix {
   private int SPLIT_SIZE = 4;
-  private int LEAF_SIZE = 1000;
+  private int LEAF_SIZE = 512;
 
   private int _resultHeight;
   private int _resultWidth;
@@ -277,7 +277,7 @@ class AdvancedMatrix extends AMatrix {
     long[] resultArray = new long[resultHeight * resultWidth];
 
     for (int i = 0; i < resultHeight; ++i) {
-      for (int k = 0; k < resultWidth; ++k) {
+      for (int k = 0; k < this.getWidth(); ++k) {
         for (int j = 0; j < resultWidth; ++j) {
           resultArray[i * resultWidth + j] +=
             this.getArray()[i * this.getWidth() + k] * m2.getArray()[k * resultWidth + j];
