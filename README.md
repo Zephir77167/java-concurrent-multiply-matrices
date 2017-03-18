@@ -35,7 +35,7 @@ java -Xmx8192m  -cp "out:libs/*" SimpleMatrixMultiply resources/matrices-4096-40
 java -Xmx8192m -cp "out:libs/*" AdvancedMatrixMultiply resources/matrices-4096-4095-4095-4096.json
 ```
 
-Note: all tests have been done using `-Xmx8192m`, giving the JVM 8Go of heap size.
+Note: all tests have been executed using `-Xmx8192m` (or `-Xmx8192m` for computers that don't have 8Go of RAM), allocating 8Go of heap size to the JVM.
 
 Note on AdvancedMatrixMultiply: computing matrices with a side size of more than 4096 requires more than 8Go of RAM, in order not to exceed the JVM heap size.
 
