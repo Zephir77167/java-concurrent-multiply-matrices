@@ -1,5 +1,6 @@
 class AdvancedMatrix extends AMatrix {
   private int SPLIT_SIZE = 4;
+  private int LEAF_SIZE = 1000;
 
   private int _resultHeight;
   private int _resultWidth;
@@ -148,7 +149,7 @@ class AdvancedMatrix extends AMatrix {
   private AMatrix[] split(AMatrix m) {
     int fullSize = _chunkSideSize * 2;
 
-    if (fullSize < SPLIT_SIZE) {
+    if (fullSize <= LEAF_SIZE) {
       return null;
     }
 
